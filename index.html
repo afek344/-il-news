@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlashIL | Pro</title>
+    <title>FlashIL | הכל במקום אחד</title>
     <style>
         :root { --red: #ed1c24; --bg: #121212; --card: #1e1e1e; --text: #ffffff; }
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
@@ -12,7 +12,7 @@
         .nav-btn { border: none; padding: 8px 18px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; transition: 0.2s; }
         .nav-btn.active { background: var(--red); transform: scale(1.05); }
         .container { max-width: 600px; margin: auto; padding: 10px; }
-        .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 6px solid var(--red); box-shadow: 0 10px 20px rgba(0,0,0,0.4); transition: 0.3s; animation: fadeIn 0.5s ease-in; }
+        .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 6px solid var(--red); box-shadow: 0 10px 20px rgba(0,0,0,0.4); animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .card-img { width: 100%; height: 230px; object-fit: cover; background: #222; display: block; }
         .card-content { padding: 18px; }
@@ -25,32 +25,35 @@
 </head>
 <body>
 
-<header>FlashIL | דיווחים מהשטח</header>
+<header>FlashIL | כל העדכונים</header>
 
 <div class="nav">
-    <button class="nav-btn active" onclick="filter('all', this)">הכל</button>
-    <button class="nav-btn" onclick="filter('חמ\'ל', this)">חמ"ל 🔥</button>
-    <button class="nav-btn" onclick="filter('וואלה', this)">וואלה</button>
-    <button class="nav-btn" onclick="filter('מעריב', this)">מעריב</button>
+    <button class="nav-btn active" onclick="filter('חדשות', this)">חדשות 🔥</button>
+    <button class="nav-btn" onclick="filter('כלכלה', this)">כלכלה 💰</button>
+    <button class="nav-btn" onclick="filter('ספורט', this)">ספורט ⚽</button>
+    <button class="nav-btn" onclick="filter('נדלן', this)">נדל"ן 🏠</button>
 </div>
 
 <div class="container" id="feed">
-    <div id="status">טוען דיווחים אחרונים...</div>
+    <div id="status">טוען את כל העולמות...</div>
 </div>
 
 <script>
     let allNews = [];
+    // הוספת מקורות לכל הקטגוריות החדשות
     const FEEDS = [
-        { name: 'חמ"ל', url: 'https://www.hamal.co.il/rss' },
-        { name: 'וואלה', url: 'https://rss.walla.co.il/feed/1' },
-        { name: 'מעריב', url: 'https://www.maariv.co.il/Rss/RssFeeds0.aspx' }
+        { name: 'חמ"ל', category: 'חדשות', url: 'https://www.hamal.co.il/rss' },
+        { name: 'וואלה', category: 'חדשות', url: 'https://rss.walla.co.il/feed/1' },
+        { name: 'כלכליסט', category: 'כלכלה', url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml' },
+        { name: 'ספורט 5', category: 'ספורט', url: 'https://www.sport5.co.il/RSSFeed.aspx' },
+        { name: 'נדלן ניוז', category: 'נדלן', url: 'https://www.nadlan.org.il/feed/' }
     ];
 
     async function load() {
         allNews = [];
         for (const f of FEEDS) {
             try {
-                const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&api_key=oyncy7v7z8x8u8u8u8u8u8u8u8u8u8u8u8u8u8u8&count=50&t=${Date.now()}`;
+                const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&api_key=oyncy7v7z8x8u8u8u8u8u8u8u8u8u8u8u8u8u8u8&count=20&t=${Date.now()}`;
                 const res = await fetch(proxyUrl);
                 const data = await res.json();
                 if (data.status === 'ok') {
@@ -60,23 +63,48 @@
                             const m = i.description.match(/src="([^"> ]+)"/);
                             if (m) img = m[1];
                         }
-                        const cleanTitle = i.title.replace(/<\/?[^>]+(>|$)/g, "");
-                        allNews.push({ ...i, title: cleanTitle, source: f.name, image: img });
+                        allNews.push({ ...i, category: f.category, source: f.name, image: img });
                     });
                 }
             } catch (e) { console.log("Failed: " + f.name); }
         }
         allNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-        if (allNews.length > 0) render(allNews);
+        render(allNews.filter(n => n.category === 'חדשות')); // טעינה ראשונית של חדשות
     }
 
     function render(list) {
         const feed = document.getElementById('feed');
-        feed.innerHTML = '';
+        feed.innerHTML = list.length ? '' : '<div id="status">אין דיווחים כרגע בקטגוריה זו.</div>';
         list.forEach(item => {
             const time = new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
             feed.innerHTML += `
                 <div class="card">
                     ${item.image ? `<img src="${item.image}" class="card-img" onerror="this.remove()">` : ''}
                     <div class="card-content">
-                        <div class="card-title" onclick="window.open('${item.link}', '_blank')
+                        <div class="card-title" onclick="window.open('${item.link}', '_blank')">${item.title}</div>
+                        <div class="meta">
+                            <div>
+                                <span class="source">${item.source}</span>
+                                <span style="margin-right:8px">${time}</span>
+                            </div>
+                            <button class="share-btn" onclick="window.open('https://wa.me/?text=${encodeURIComponent(item.title + ' ' + item.link)}')">שתף</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function filter(cat, btn) {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        render(allNews.filter(n => n.category === cat));
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    load();
+    setInterval(load, 120000);
+</script>
+
+</body>
+</html>
