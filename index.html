@@ -7,13 +7,13 @@
     <style>
         :root { --red: #ed1c24; --bg: #121212; --card: #1e1e1e; --text: #ffffff; }
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); }
-        header { background: var(--red); padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .nav { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #1a1a1a; position: sticky; top: 58px; z-index: 999; }
-        .nav-btn { border: none; padding: 8px 16px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        header { background: var(--red); padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; }
+        .nav { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #1a1a1a; position: sticky; top: 58px; z-index: 999; border-bottom: 1px solid #333; }
+        .nav-btn { border: none; padding: 8px 16px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; }
         .nav-btn.active { background: var(--red); }
         .container { max-width: 600px; margin: auto; padding: 10px; }
-        .card { background: var(--card); border-radius: 12px; margin-bottom: 15px; overflow: hidden; border-right: 5px solid var(--red); }
-        .card-img { width: 100%; height: 220px; object-fit: cover; background: #222; }
+        .card { background: var(--card); border-radius: 12px; margin-bottom: 15px; overflow: hidden; border-right: 5px solid var(--red); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .card-img { width: 100%; height: 200px; object-fit: cover; background: #222; display: block; }
         .card-content { padding: 15px; }
         .card-title { font-size: 19px; font-weight: bold; line-height: 1.4; margin-bottom: 10px; }
         .meta { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; border-top: 1px solid #333; padding-top: 10px; }
@@ -23,7 +23,7 @@
 </head>
 <body>
 
-<header>FlashIL | דיווחים מהשטח</header>
+<header>FlashIL | דיווחים בזמן אמת</header>
 
 <div class="nav">
     <button class="nav-btn active" onclick="filter('all', this)">הכל</button>
@@ -33,11 +33,12 @@
 </div>
 
 <div class="container" id="feed">
-    <div id="status">מתחבר למבזקים האחרונים...</div>
+    <div id="status">טוען דיווחים מהשטח...</div>
 </div>
 
 <script>
     let allNews = [];
+    // רשימת מקורות עם מתווך חלופי ומהיר
     const FEEDS = [
         { name: 'חמ"ל', url: 'https://www.hamal.co.il/rss' },
         { name: 'וואלה', url: 'https://rss.walla.co.il/feed/1' },
@@ -46,29 +47,39 @@
 
     async function load() {
         allNews = [];
+        const status = document.getElementById('status');
+        
         for (const f of FEEDS) {
             try {
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&api_key=oyncy7v7z8x8u8u8u8u8u8u8u8u8u8u8u8u8u8u8`);
+                // שימוש במתווך ציבורי ללא צורך במפתח (Key) כדי למנוע חסימות
+                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&t=${Date.now()}`);
                 const data = await res.json();
+                
                 if (data.status === 'ok') {
                     data.items.forEach(i => {
                         let img = i.enclosure?.link || i.thumbnail || '';
+                        // חיפוש תמונה בתוך התיאור אם לא נמצאה
                         if (!img && i.description) {
-                            const m = i.description.match(/src="([^"]+)"/);
+                            const m = i.description.match(/src="([^"> ]+)"/);
                             if (m) img = m[1];
                         }
                         allNews.push({ ...i, source: f.name, image: img });
                     });
                 }
-            } catch (e) {}
+            } catch (e) { console.error("Error:", f.name); }
         }
+
         allNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-        render(allNews);
+        
+        if (allNews.length > 0) {
+            render(allNews);
+        } else {
+            status.innerText = "משהו חוסם את הטעינה. נסה לרענן או לבדוק חיבור אינטרנט.";
+        }
     }
 
     function render(list) {
         const feed = document.getElementById('feed');
-        if (!list.length) return;
         feed.innerHTML = '';
         list.forEach(item => {
             const time = new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
@@ -94,7 +105,7 @@
     }
 
     load();
-    setInterval(load, 60000);
+    setInterval(load, 120000); // רענון כל 2 דקות
 </script>
 
 </body>
