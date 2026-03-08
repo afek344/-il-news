@@ -3,34 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IL-NEWS | מבזקים עם תמונות</title>
+    <title>IL-NEWS | חמ"ל ומבזקים</title>
     <style>
         :root { --red: #ed1c24; --blue: #002244; --bg: #f0f2f5; }
-        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: #1c1e21; }
-        header { background: var(--red); color: white; padding: 15px; text-align: center; font-size: 22px; font-weight: 900; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: #1c1e21; }
+        header { background: var(--red); color: white; padding: 15px; text-align: center; font-size: 22px; font-weight: 900; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .container { max-width: 600px; margin: 10px auto; padding: 0 10px; }
-        
-        /* עיצוב כרטיס עם תמונה */
-        .card { background: white; border-radius: 12px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; display: flex; flex-direction: column; transition: 0.2s; }
-        .card:active { transform: scale(0.98); }
-        
-        .card-image { width: 100%; height: 200px; object-fit: cover; background: #ddd; display: block; }
-        .card-content { padding: 12px; }
-        
-        .title { font-size: 17px; font-weight: bold; line-height: 1.4; margin-bottom: 8px; color: #050505; }
-        .meta { display: flex; align-items: center; gap: 8px; }
-        .source-tag { background: var(--blue); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .time { color: #65676b; font-size: 11px; }
-        
-        #status { text-align: center; padding: 30px; color: #666; font-weight: bold; }
+        .card { background: white; border-radius: 12px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; display: flex; flex-direction: column; }
+        .card-image { width: 100%; height: 210px; object-fit: cover; background: #ddd; display: block; }
+        .card-content { padding: 15px; }
+        .title { font-size: 18px; font-weight: bold; line-height: 1.4; margin-bottom: 10px; }
+        .meta { display: flex; align-items: center; gap: 10px; }
+        .source-tag { background: var(--blue); color: white; padding: 3px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; }
+        .time { color: #65676b; font-size: 12px; }
+        #status { text-align: center; padding: 40px; color: #666; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>IL-NEWS | עדכונים מהשטח</header>
+<header>IL-NEWS | דיווחי חמ"ל וחדשות</header>
 
 <div class="container" id="feed">
-    <div id="status">טוען מבזקים ותמונות...</div>
+    <div id="status">מתחבר לדיווחים של חמ"ל...</div>
 </div>
 
 <script>
@@ -40,63 +34,67 @@
         { name: 'מעריב', url: 'https://www.maariv.co.il/Rss/RssFeeds0.aspx' }
     ];
 
-    async function fetchAllNews() {
+    async function fetchNews() {
         const feedElement = document.getElementById('feed');
         let allItems = [];
 
-        try {
-            const requests = SOURCES.map(source => 
-                fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`)
-                .then(res => res.json())
-                .then(data => {
-                    if(data.items) {
-                        return data.items.map(item => ({ 
-                            ...item, 
+        for (const source of SOURCES) {
+            try {
+                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&api_key=oyncy7v7z8x8u8u8u8u8u8u8u8u8u8u8u8u8u8u8`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    const items = data.items.map(item => {
+                        // חילוץ תמונה מחמ"ל או מקורות אחרים
+                        let imageUrl = item.enclosure?.link || item.thumbnail || '';
+                        
+                        // טריק קטן לחילוץ תמונה אם היא מתחבאת בתיאור (קורה הרבה בחמ"ל)
+                        if (!imageUrl && item.description && item.description.includes('<img')) {
+                            const match = item.description.match(/src="([^"]+)"/);
+                            if (match) imageUrl = match[1];
+                        }
+
+                        return {
+                            ...item,
                             sourceName: source.name,
-                            // ניסיון למצוא תמונה בתוך ה-RSS (לפעמים היא ב-thumbnail או בתוך התיאור)
-                            image: item.enclosure?.link || item.thumbnail || "" 
-                        }));
-                    }
-                    return [];
-                })
-                .catch(() => [])
-            );
+                            image: imageUrl
+                        };
+                    });
+                    allItems = [...allItems, ...items];
+                }
+            } catch (e) { console.error("Error loading " + source.name); }
+        }
 
-            const results = await Promise.all(requests);
-            allItems = results.flat();
-            allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+        // מיון: הכי חדש למעלה
+        allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
-            if (allItems.length > 0) {
-                feedElement.innerHTML = '';
-                allItems.forEach(item => {
-                    const timeStr = new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
-                    
-                    // בונה את הכרטיס - אם אין תמונה, החלק של התמונה לא יופיע
-                    const imageHtml = item.image ? `<img src="${item.image}" class="card-image" onerror="this.style.display='none'">` : '';
-                    
-                    feedElement.innerHTML += `
-                        <div class="card" onclick="window.open('${item.link}', '_blank')">
-                            ${imageHtml}
-                            <div class="card-content">
-                                <div class="title">${item.title}</div>
-                                <div class="meta">
-                                    <span class="source-tag">${item.sourceName}</span>
-                                    <span class="time">${timeStr}</span>
-                                </div>
+        if (allItems.length > 0) {
+            feedElement.innerHTML = '';
+            allItems.forEach(item => {
+                const time = new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
+                const imgHtml = item.image ? `<img src="${item.image}" class="card-image" onerror="this.style.display='none'">` : '';
+                
+                feedElement.innerHTML += `
+                    <div class="card" onclick="window.open('${item.link}', '_blank')">
+                        ${imgHtml}
+                        <div class="card-content">
+                            <div class="title">${item.title}</div>
+                            <div class="meta">
+                                <span class="source-tag">${item.sourceName}</span>
+                                <span class="time">${time}</span>
                             </div>
                         </div>
-                    `;
-                });
-            } else {
-                document.getElementById('status').innerText = "לא נמצאו כתבות. נסה שוב.";
-            }
-        } catch (error) {
-            document.getElementById('status').innerText = "שגיאה בחיבור לשרת.";
+                    </div>
+                `;
+            });
+        } else {
+            feedElement.innerHTML = '<div id="status">משהו השתבש. נסה לרענן את האתר.</div>';
         }
     }
 
-    fetchAllNews();
-    setInterval(fetchAllNews, 120000);
+    fetchNews();
+    // רענון כל 60 שניות כדי לא לפספס אף דיווח מחמ"ל
+    setInterval(fetchNews, 60000);
 </script>
 
 </body>
