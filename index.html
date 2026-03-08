@@ -1,25 +1,41 @@
-async function fetchNews() {
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IL-NEWS | חדשות בזמן אמת</title>
+    <style>
+        :root { --red: #ed1c24; --blue: #002244; --bg: #f4f6f9; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: #333; }
+        header { background: var(--red); color: white; padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { max-width: 600px; margin: 10px auto; padding: 0 10px; }
+        .card { background: white; border-radius: 8px; margin-bottom: 12px; padding: 15px; border-right: 6px solid var(--blue); box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; }
+        .card:active { transform: scale(0.98); }
+        .title { font-size: 18px; font-weight: bold; line-height: 1.4; margin-bottom: 8px; }
+        .time { color: #666; font-size: 13px; font-weight: bold; display: block; }
+        #status { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<header>IL-NEWS | חדשות בזמן אמת</header>
+
+<div class="container" id="feed">
+    <div id="status">טוען חדשות אחרונות...</div>
+</div>
+
+<script>
+    async function fetchNews() {
         const feed = document.getElementById('feed');
-        
         try {
-            // כאן אנחנו פונים למקור ששואב חדשות אמיתיות מאתר מעריב
+            // שואב חדשות מאתר מעריב דרך מתווך
             const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.maariv.co.il%2FRss%2FRssFeeds0.aspx');
             const data = await response.json();
             
-            feed.innerHTML = ''; // מנקה את הודעת הטעינה
-
-            data.items.forEach(item => {
-                feed.innerHTML += `
-                    <div class="card" onclick="window.open('${item.link}', '_blank')" style="cursor:pointer;">
-                        <div class="title">${item.title}</div>
-                        <div class="time">${new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})} • חדשות חמות</div>
-                    </div>
-                `;
-            });
-        } catch (error) {
-            feed.innerHTML = '<div class="card"><div class="title">אופס! שגיאה בטעינה. נסה לרענן.</div></div>';
-        }
-    }
-
-    // מפעיל את השאיבה ברגע שהדף עולה
-    fetchNews();
+            if (data.items && data.items.length > 0) {
+                feed.innerHTML = ''; // מנקה את הודעת הטעינה
+                data.items.forEach(item => {
+                    feed.innerHTML += `
+                        <div class="card" onclick="window.open('${item.link}', '_blank')">
+                            <div class="title">${item.title}</div>
+                            <div class="time">${new Date(item.pubDate).toLocaleTimeString('he-IL
