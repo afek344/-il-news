@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FlashIL – by Afek</title>
-
 <style>
 body{
   margin:0;
@@ -21,6 +20,7 @@ header{
   font-weight:bold;
   position:sticky;
   top:0;
+  z-index:100;
 }
 #breaking{
   background:#ff3b30;
@@ -85,7 +85,7 @@ button{
 FlashIL – by Afek
 </header>
 
-<div id="breaking">מבזק: החדשות החמות עכשיו!</div>
+<div id="breaking">מבזק: טעינת חדשות...</div>
 
 <div class="container" id="news"></div>
 
@@ -98,10 +98,13 @@ const sources = [
   {name:"חדשות 12", url:"https://api.allorigins.win/get?url="+encodeURIComponent("https://www.mako.co.il/feeds/12news.xml")}
 ];
 
-// פונקציה לטעינת חדשות
+let breakingIndex = 0;
+let breakingItems = [];
+
 async function loadNews() {
   const newsContainer = document.getElementById("news");
   newsContainer.innerHTML = "";
+  breakingItems = [];
   for(const src of sources){
     try{
       const res = await fetch(src.url);
@@ -124,6 +127,8 @@ async function loadNews() {
         `;
         card.onclick=()=>{ window.open(link,"_blank"); };
         newsContainer.appendChild(card);
+        // הוסף למבזקים
+        breakingItems.push(title);
       });
     }catch(e){
       console.log("Error loading "+src.name, e);
@@ -131,13 +136,23 @@ async function loadNews() {
   }
 }
 
+// מבזק מתחלף
+function rotateBreaking(){
+  if(breakingItems.length === 0) return;
+  document.getElementById("breaking").textContent = "מבזק: " + breakingItems[breakingIndex];
+  breakingIndex = (breakingIndex +1)%breakingItems.length;
+}
+
 // מצב כהה
 function toggleDark(){
   document.body.classList.toggle("dark");
 }
 
-// טעינת חדשות בפעם הראשונה
+// טעינת חדשות ראשונית
 loadNews();
+
+// סיבוב מבזקים כל 10 שניות
+setInterval(rotateBreaking, 10000);
 
 // טעינה מחדש כל 5 דקות
 setInterval(loadNews, 300000);
