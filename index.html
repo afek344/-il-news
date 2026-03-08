@@ -1,131 +1,185 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlashIL | Pro</title>
-    <style>
-        :root { --red: #ed1c24; --bg: #121212; --card: #1e1e1e; --text: #ffffff; }
-        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); }
-        header { background: var(--red); padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 15px rgba(0,0,0,0.5); }
-        .nav { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #1a1a1a; position: sticky; top: 58px; z-index: 999; border-bottom: 1px solid #333; scrollbar-width: none; }
-        .nav-btn { border: none; padding: 8px 18px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 14px; transition: 0.2s; }
-        .nav-btn.active { background: var(--red); transform: scale(1.05); }
-        .container { max-width: 600px; margin: auto; padding: 10px; min-height: 80vh; }
-        .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 6px solid var(--red); box-shadow: 0 10px 20px rgba(0,0,0,0.4); animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .card-img { width: 100%; height: 210px; object-fit: cover; background: #222; display: block; }
-        .card-content { padding: 15px; }
-        .card-title { font-size: 18px; font-weight: bold; line-height: 1.4; margin-bottom: 10px; color: white; text-decoration: none; display: block; cursor: pointer; }
-        .meta { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; border-top: 1px solid #333; padding-top: 10px; align-items: center; }
-        .source-tag { background: #000; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
-        .share-btn { background: #25D366; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; }
-        #status { text-align: center; padding: 50px; color: #888; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlashIL | Pro</title>
+
+<style>
+:root{--red:#ed1c24;--bg:#121212;--card:#1e1e1e;--text:#fff;}
+body{margin:0;font-family:Arial;background:var(--bg);color:var(--text);}
+header{background:var(--red);padding:15px;text-align:center;font-size:24px;font-weight:900;position:sticky;top:0;z-index:1000}
+
+.nav{display:flex;gap:10px;padding:10px;background:#1a1a1a;position:sticky;top:58px;overflow-x:auto}
+.nav-btn{border:none;padding:8px 18px;border-radius:20px;background:#333;color:white;cursor:pointer;font-weight:bold}
+.nav-btn.active{background:var(--red)}
+
+.container{max-width:600px;margin:auto;padding:10px}
+
+.card{background:var(--card);border-radius:15px;margin-bottom:20px;overflow:hidden;border-right:6px solid var(--red)}
+.card-img{width:100%;height:200px;object-fit:cover;background:#222}
+.card-content{padding:15px}
+.card-title{font-size:18px;font-weight:bold;margin-bottom:10px;cursor:pointer}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:#aaa;border-top:1px solid #333;padding-top:10px}
+
+.source{background:#000;padding:3px 8px;border-radius:4px;font-size:11px}
+.share{background:#25D366;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:12px;cursor:pointer}
+
+#status{text-align:center;padding:40px;color:#888}
+</style>
 </head>
+
 <body>
 
 <header>FlashIL | Pro</header>
 
 <div class="nav">
-    <button class="nav-btn active" onclick="changeCategory('news', this)">חדשות 🔥</button>
-    <button class="nav-btn" onclick="changeCategory('money', this)">כלכלה 💰</button>
-    <button class="nav-btn" onclick="changeCategory('sport', this)">ספורט ⚽</button>
-    <button class="nav-btn" onclick="changeCategory('nadlan', this)">נדל"ן 🏠</button>
+<button class="nav-btn active" onclick="changeCategory('news',this)">חדשות 🔥</button>
+<button class="nav-btn" onclick="changeCategory('money',this)">כלכלה 💰</button>
+<button class="nav-btn" onclick="changeCategory('sport',this)">ספורט ⚽</button>
+<button class="nav-btn" onclick="changeCategory('nadlan',this)">נדל"ן 🏠</button>
 </div>
 
 <div class="container" id="feed">
-    <div id="status">טוען דיווחים...</div>
+<div id="status">טוען דיווחים...</div>
 </div>
 
 <script>
-    let currentCategory = 'news';
 
-    // חילקתי את המקורות לפי קטגוריות מדויקות
-    const SOURCES = {
-        news: [
-            { name: 'חמ"ל', url: 'https://www.hamal.co.il/rss' },
-            { name: 'Ynet', url: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
-            { name: 'וואלה', url: 'https://rss.walla.co.il/feed/1' }
-        ],
-        money: [
-            { name: 'כלכליסט', url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml' },
-            { name: 'TheMarker', url: 'https://www.themarker.com/srv/rss/all' }
-        ],
-        sport: [
-            { name: 'ספורט 5', url: 'https://www.sport5.co.il/RSSFeed.aspx' },
-            { name: 'ONE', url: 'https://www.one.co.il/cat/rss/feed.aspx' }
-        ],
-        nadlan: [
-            { name: 'מרכז הנדל"ן', url: 'https://www.nadlan.org.il/feed/' },
-            { name: 'ביזפורטל נדל"ן', url: 'https://www.bizportal.co.il/rss/realestat' }
-        ]
-    };
+let currentCategory="news";
 
-    async function fetchNews() {
-        const feedContainer = document.getElementById('feed');
-        const activeSources = SOURCES[currentCategory];
-        let allItems = [];
+const SOURCES={
+news:[
+{name:"Ynet",url:"https://www.ynet.co.il/Integration/StoryRss2.xml"},
+{name:"וואלה",url:"https://rss.walla.co.il/feed/1"}
+],
 
-        for (const s of activeSources) {
-            try {
-                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(s.url)}&t=${Date.now()}`);
-                const data = await res.json();
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(data.contents, "text/xml");
-                const items = xml.querySelectorAll("item");
+money:[
+{name:"כלכליסט",url:"https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml"},
+{name:"גלובס",url:"https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=2"}
+],
 
-                items.forEach(el => {
-                    const title = el.querySelector("title")?.textContent || "";
-                    const link = el.querySelector("link")?.textContent || "";
-                    const pubDate = el.querySelector("pubDate")?.textContent || "";
-                    const description = el.querySelector("description")?.textContent || "";
-                    
-                    let img = "";
-                    const media = el.getElementsByTagName("media:content")[0] || el.getElementsByTagName("enclosure")[0];
-                    if (media) img = media.getAttribute("url");
-                    if (!img) {
-                        const imgMatch = description.match(/src="([^"> ]+)"/);
-                        if (imgMatch) img = imgMatch[1];
-                    }
+sport:[
+{name:"ONE",url:"https://www.one.co.il/rss/"},
+{name:"ספורט5",url:"https://www.sport5.co.il/RSSFeed.aspx?cat=1"}
+],
 
-                    allItems.push({ title, link, pubDate: new Date(pubDate), img, source: s.name });
-                });
-            } catch (e) { console.error(s.name + " failed"); }
-        }
+nadlan:[
+{name:"גלובס נדלן",url:"https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=585"},
+{name:"כלכליסט נדלן",url:"https://www.calcalist.co.il/GeneralRSS/0,16335,L-3940,00.xml"}
+]
+};
 
-        // מיון לפי זמן (החדש ביותר למעלה)
-        allItems.sort((a, b) => b.pubDate - a.pubDate);
+async function fetchNews(){
 
-        if (allItems.length > 0) {
-            feedContainer.innerHTML = allItems.map(item => `
-                <div class="card">
-                    ${item.img ? `<img src="${item.img}" class="card-img" onerror="this.style.display='none'">` : ''}
-                    <div class="card-content">
-                        <div class="card-title" onclick="window.open('${item.link}', '_blank')">${item.title}</div>
-                        <div class="meta">
-                            <div><span class="source-tag">${item.source}</span><span style="margin-right:8px">${item.pubDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</span></div>
-                            <button class="share-btn" onclick="window.open('https://wa.me/?text=${encodeURIComponent(item.title + ' ' + item.link)}')">שתף</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            feedContainer.innerHTML = '<div id="status">לא נמצאו דיווחים כרגע.</div>';
-        }
-    }
+const feed=document.getElementById("feed");
+const sources=SOURCES[currentCategory];
+let all=[];
 
-    function changeCategory(type, btn) {
-        currentCategory = type;
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('feed').innerHTML = '<div id="status">טוען ' + btn.innerText + '...</div>';
-        fetchNews();
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
+for(const s of sources){
 
-    fetchNews();
-    setInterval(fetchNews, 60000); // רענון כל דקה
+try{
+
+const res=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(s.url)}`);
+
+const text=await res.text();
+
+const parser=new DOMParser();
+const xml=parser.parseFromString(text,"text/xml");
+
+const items=xml.querySelectorAll("item");
+
+items.forEach(el=>{
+
+const title=el.querySelector("title")?.textContent||"";
+const link=el.querySelector("link")?.textContent||"";
+const desc=el.querySelector("description")?.textContent||"";
+const pub=el.querySelector("pubDate")?.textContent||"";
+
+let img="";
+
+const media=el.querySelector("media\\:content,enclosure");
+
+if(media) img=media.getAttribute("url");
+
+if(!img){
+const match=desc.match(/src="([^">]+)/);
+if(match) img=match[1];
+}
+
+if(title && link){
+
+all.push({
+title:title,
+link:link,
+img:img,
+source:s.name,
+date:new Date(pub)
+});
+
+}
+
+});
+
+}catch(e){console.log("error",s.name)}
+
+}
+
+all.sort((a,b)=>b.date-a.date);
+
+if(all.length===0){
+
+feed.innerHTML='<div id="status">אין דיווחים כרגע</div>';
+return;
+
+}
+
+feed.innerHTML=all.map(n=>`
+
+<div class="card">
+
+${n.img?`<img src="${n.img}" class="card-img" onerror="this.style.display='none'">`:""}
+
+<div class="card-content">
+
+<div class="card-title" onclick="window.open('${n.link}','_blank')">${n.title}</div>
+
+<div class="meta">
+
+<div>
+<span class="source">${n.source}</span>
+</div>
+
+<button class="share"
+onclick="window.open('https://wa.me/?text=${encodeURIComponent(n.title+" "+n.link)}')">
+שתף
+</button>
+
+</div>
+
+</div>
+</div>
+
+`).join("");
+
+}
+
+function changeCategory(cat,btn){
+
+currentCategory=cat;
+
+document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+
+document.getElementById("feed").innerHTML='<div id="status">טוען...</div>';
+
+fetchNews();
+
+}
+
+fetchNews();
+
 </script>
+
 </body>
 </html>
