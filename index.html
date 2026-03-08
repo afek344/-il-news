@@ -6,24 +6,26 @@
     <title>FlashIL | Pro</title>
     <style>
         :root { --red: #ed1c24; --bg: #121212; --card: #1e1e1e; --text: #ffffff; }
-        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); }
-        header { background: var(--red); padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; }
-        .nav { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #1a1a1a; position: sticky; top: 58px; z-index: 999; border-bottom: 1px solid #333; }
-        .nav-btn { border: none; padding: 8px 16px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; }
-        .nav-btn.active { background: var(--red); }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+        header { background: var(--red); padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 15px rgba(0,0,0,0.5); }
+        .nav { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #1a1a1a; position: sticky; top: 58px; z-index: 999; border-bottom: 1px solid #333; scrollbar-width: none; }
+        .nav-btn { border: none; padding: 8px 18px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; transition: 0.2s; }
+        .nav-btn.active { background: var(--red); transform: scale(1.05); }
         .container { max-width: 600px; margin: auto; padding: 10px; }
-        .card { background: var(--card); border-radius: 12px; margin-bottom: 15px; overflow: hidden; border-right: 5px solid var(--red); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .card-img { width: 100%; height: 200px; object-fit: cover; background: #222; display: block; }
-        .card-content { padding: 15px; }
-        .card-title { font-size: 19px; font-weight: bold; line-height: 1.4; margin-bottom: 10px; }
-        .meta { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; border-top: 1px solid #333; padding-top: 10px; }
-        .source { background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
-        #status { text-align: center; padding: 50px; font-size: 18px; color: #888; }
+        .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 6px solid var(--red); box-shadow: 0 10px 20px rgba(0,0,0,0.4); transition: 0.3s; animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card-img { width: 100%; height: 230px; object-fit: cover; background: #222; display: block; }
+        .card-content { padding: 18px; }
+        .card-title { font-size: 20px; font-weight: bold; line-height: 1.4; margin-bottom: 12px; cursor: pointer; }
+        .meta { display: flex; justify-content: space-between; font-size: 13px; color: #aaa; border-top: 1px solid #333; padding-top: 12px; align-items: center; }
+        .source { background: #000; color: #fff; padding: 3px 10px; border-radius: 6px; font-weight: 900; font-size: 11px; }
+        .share-btn { background: #25D366; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; }
+        #status { text-align: center; padding: 60px; font-size: 20px; color: #666; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>FlashIL | דיווחים בזמן אמת</header>
+<header>FlashIL | דיווחים מהשטח</header>
 
 <div class="nav">
     <button class="nav-btn active" onclick="filter('all', this)">הכל</button>
@@ -33,12 +35,11 @@
 </div>
 
 <div class="container" id="feed">
-    <div id="status">טוען דיווחים מהשטח...</div>
+    <div id="status">טוען דיווחים אחרונים...</div>
 </div>
 
 <script>
     let allNews = [];
-    // רשימת מקורות עם מתווך חלופי ומהיר
     const FEEDS = [
         { name: 'חמ"ל', url: 'https://www.hamal.co.il/rss' },
         { name: 'וואלה', url: 'https://rss.walla.co.il/feed/1' },
@@ -47,35 +48,26 @@
 
     async function load() {
         allNews = [];
-        const status = document.getElementById('status');
-        
         for (const f of FEEDS) {
             try {
-                // שימוש במתווך ציבורי ללא צורך במפתח (Key) כדי למנוע חסימות
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&t=${Date.now()}`);
+                const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&api_key=oyncy7v7z8x8u8u8u8u8u8u8u8u8u8u8u8u8u8u8&count=50&t=${Date.now()}`;
+                const res = await fetch(proxyUrl);
                 const data = await res.json();
-                
                 if (data.status === 'ok') {
                     data.items.forEach(i => {
                         let img = i.enclosure?.link || i.thumbnail || '';
-                        // חיפוש תמונה בתוך התיאור אם לא נמצאה
                         if (!img && i.description) {
                             const m = i.description.match(/src="([^"> ]+)"/);
                             if (m) img = m[1];
                         }
-                        allNews.push({ ...i, source: f.name, image: img });
+                        const cleanTitle = i.title.replace(/<\/?[^>]+(>|$)/g, "");
+                        allNews.push({ ...i, title: cleanTitle, source: f.name, image: img });
                     });
                 }
-            } catch (e) { console.error("Error:", f.name); }
+            } catch (e) { console.log("Failed: " + f.name); }
         }
-
         allNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-        
-        if (allNews.length > 0) {
-            render(allNews);
-        } else {
-            status.innerText = "משהו חוסם את הטעינה. נסה לרענן או לבדוק חיבור אינטרנט.";
-        }
+        if (allNews.length > 0) render(allNews);
     }
 
     function render(list) {
@@ -84,29 +76,7 @@
         list.forEach(item => {
             const time = new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
             feed.innerHTML += `
-                <div class="card" onclick="window.open('${item.link}', '_blank')">
+                <div class="card">
                     ${item.image ? `<img src="${item.image}" class="card-img" onerror="this.remove()">` : ''}
                     <div class="card-content">
-                        <div class="card-title">${item.title}</div>
-                        <div class="meta">
-                            <span class="source">${item.source}</span>
-                            <span>${time}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    function filter(s, btn) {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        render(s === 'all' ? allNews : allNews.filter(n => n.source === s));
-    }
-
-    load();
-    setInterval(load, 120000); // רענון כל 2 דקות
-</script>
-
-</body>
-</html>
+                        <div class="card-title" onclick="window.open('${item.link}', '_blank')
