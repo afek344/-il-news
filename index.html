@@ -3,52 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlashIL | דיווחים בזמן אמת</title>
+    <title>FlashIL | Live</title>
     <style>
-        :root { --red: #ed1c24; --bg: #0a0a0a; --card: #161616; --text: #ffffff; }
-        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
-        
-        /* כותרת דקה ומקצועית */
-        header { 
-            background: var(--red); padding: 12px; text-align: center; 
-            font-size: 22px; font-weight: 900; position: sticky; top: 0; 
-            z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-
-        /* פס מבזק רץ לחדשות דחופות */
-        .ticker { background: #000; color: #ffeb3b; padding: 5px; font-size: 14px; white-space: nowrap; overflow: hidden; border-bottom: 1px solid #333; }
-        .ticker-text { display: inline-block; animation: scroll 25s linear infinite; font-weight: bold; }
-        @keyframes scroll { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-
+        :root { --red: #ed1c24; --bg: #000000; --card: #111; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: white; }
+        header { background: var(--red); padding: 12px; text-align: center; font-size: 22px; font-weight: 900; position: sticky; top: 0; z-index: 100; }
         .container { max-width: 600px; margin: auto; padding: 10px; }
-
-        .card { 
-            background: var(--card); border-radius: 12px; margin-bottom: 12px; 
-            overflow: hidden; border-right: 5px solid var(--red);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4); animation: slide 0.3s ease;
-        }
-        @keyframes slide { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-
-        .card-img { width: 100%; height: 200px; object-fit: cover; background: #222; cursor: pointer; }
+        .card { background: var(--card); border-radius: 10px; margin-bottom: 12px; border-right: 4px solid var(--red); animation: fadeIn 0.2s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card-img { width: 100%; height: 200px; object-fit: cover; }
         .card-content { padding: 12px; }
-        .card-title { font-size: 17px; font-weight: bold; line-height: 1.4; color: #fff; text-decoration: none; display: block; margin-bottom: 8px; }
-        
-        .meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #aaa; padding-top: 8px; border-top: 1px solid #222; }
-        .source { background: #333; color: var(--red); padding: 2px 6px; border-radius: 4px; font-weight: 800; }
-        .time { font-weight: bold; color: #eee; }
-
-        #status { text-align: center; padding: 50px; color: #666; font-weight: bold; }
+        .card-title { font-size: 18px; font-weight: bold; color: #fff; text-decoration: none; line-height: 1.4; display: block; }
+        .meta { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: 8px; border-top: 1px solid #222; padding-top: 8px; }
+        .source { color: var(--red); font-weight: bold; }
+        #status { text-align: center; padding: 40px; color: var(--red); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>FlashIL | דיווחים ישירים</header>
-<div class="ticker"><div class="ticker-text" id="ticker-content">טוען מבזקים אחרונים מכל המקורות...</div></div>
+<header>FlashIL | מבזק ישיר</header>
 
-<div class="container" id="main-feed">
-    <div id="status">מתחבר למקורות המידע...</div>
+<div class="container" id="feed">
+    <div id="status">טוען נתונים בקישור ישיר...</div>
 </div>
 
 <script>
-    // רשימת מקורות מקסימלית ל-0 עיכוב
-    const SOURCES =
+    const FEEDS = [
+        { n: 'חמ"ל', u: 'https://www.hamal.co.il/rss' },
+        { n: 'Ynet', u: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
+        { n: 'וואלה', u: 'https://rss.walla.co.il/feed/1' },
+        { n: 'N12', u: 'https://mako.co.il/rss/news-military.xml' },
+        { n: 'ספורט 5', u: 'https://www.sport5.co.il/RSSFeed.aspx' }
+    ];
+
+    async function load() {
+        const feed = document.getElementById('feed');
+        let items = [];
+
+        // טעינה סופר מהירה - כולם בבת אחת
+        await Promise.all(FEEDS.map(async (s) => {
+            try {
+                const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(s.u)}&t=${Date.now()}`);
+                const d = await r.json();
+                const xml = new DOMParser().parseFromString(d.contents, "text/xml");
+                
+                xml.querySelectorAll("item").forEach(el => {
+                    const title = el.querySelector("title")?.textContent || "";
+                    const link = el.querySelector("link")?.textContent || "";
+                    const pubDate = new Date(el.querySelector("pubDate")?.textContent || "");
+                    const desc = el.querySelector("description")?.textContent || "";
+                    
+                    let img = "";
+                    const media = el.getElementsByTagName("media:content")[0] || el.querySelector("enclosure");
+                    if (media) img = media.getAttribute("url");
+                    if (!img) {
+                        const m = desc.match(/src="([^"> ]+)"/);
+                        if (m) img = m[1];
+                    }
+
+                    if (title.length > 5) {
+                        items.push({ title, link, img, date: pubDate, source: s.n });
+                    }
+                });
+            } catch (e) {}
+        }));
+
+        items.sort((a, b) => b.date - a.date);
+
+        if (items.length > 0) {
+            feed.innerHTML = items.slice(0, 60).map(i => `
+                <div class="card">
+                    ${i.img ? `<img src="${i.img}" class="card-img" loading="lazy" onclick="window.open('${i.link}')">` : ''}
+                    <div class="card-content">
+                        <a href="${i.link}" target="_blank" class="card-title">${i.title}</a>
+                        <div class="meta">
+                            <span class="source">${i.source}</span>
+                            <span>${i.date.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
+    load();
+    setInterval(load, 45000); // רענון כל 45 שניות
+</script>
+</body>
+</html>
