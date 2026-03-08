@@ -3,151 +3,144 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>FlashIL – by Afek</title>
 
 <style>
-
 body{
-margin:0;
-font-family:Arial;
-background:#f2f2f2;
+  margin:0;
+  font-family:Arial;
+  background:#f2f2f2;
+  color:#1c1e21;
 }
-
 header{
-background:#e30613;
-color:white;
-text-align:center;
-padding:16px;
-font-size:22px;
-font-weight:bold;
-position:sticky;
-top:0;
+  background:#e30613;
+  color:white;
+  text-align:center;
+  padding:16px;
+  font-size:22px;
+  font-weight:bold;
+  position:sticky;
+  top:0;
 }
-
+#breaking{
+  background:#ff3b30;
+  color:white;
+  padding:10px;
+  font-weight:bold;
+  text-align:center;
+}
 .container{
-max-width:600px;
-margin:auto;
-padding:10px;
+  max-width:600px;
+  margin:auto;
+  padding:10px;
 }
-
 .card{
-background:white;
-border-radius:12px;
-margin-bottom:15px;
-overflow:hidden;
-box-shadow:0 2px 8px rgba(0,0,0,0.15);
-cursor:pointer;
+  background:white;
+  border-radius:12px;
+  margin-bottom:15px;
+  overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,0.15);
+  cursor:pointer;
 }
-
 .card img{
-width:100%;
-height:200px;
-object-fit:cover;
+  width:100%;
+  height:200px;
+  object-fit:cover;
 }
-
 .content{
-padding:12px;
+  padding:12px;
 }
-
 .title{
-font-size:18px;
-font-weight:bold;
-margin-bottom:6px;
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:6px;
 }
-
 .meta{
-font-size:13px;
-color:#666;
+  font-size:13px;
+  color:#666;
 }
-
 button{
-position:fixed;
-bottom:20px;
-left:20px;
-border:none;
-background:#000;
-color:white;
-padding:10px 15px;
-border-radius:20px;
-cursor:pointer;
+  position:fixed;
+  bottom:20px;
+  left:20px;
+  border:none;
+  background:#000;
+  color:white;
+  padding:10px 15px;
+  border-radius:20px;
+  cursor:pointer;
 }
-
 .dark{
-background:#121212;
-color:white;
+  background:#121212;
+  color:white;
 }
-
 .dark .card{
-background:#1e1e1e;
+  background:#1e1e1e;
 }
-
 </style>
 </head>
-
 <body>
 
 <header>
 FlashIL – by Afek
 </header>
 
+<div id="breaking">מבזק: החדשות החמות עכשיו!</div>
+
 <div class="container" id="news"></div>
 
 <button onclick="toggleDark()">🌙</button>
 
 <script>
+// מקורות RSS
+const sources = [
+  {name:"Ynet", url:"https://api.allorigins.win/get?url="+encodeURIComponent("https://www.ynet.co.il/Integration/StoryRss2.xml")},
+  {name:"חדשות 12", url:"https://api.allorigins.win/get?url="+encodeURIComponent("https://www.mako.co.il/feeds/12news.xml")}
+];
 
-const rssUrl =
-"https://api.allorigins.win/get?url=" +
-encodeURIComponent("https://www.ynet.co.il/Integration/StoryRss2.xml");
-
-fetch(rssUrl)
-.then(res=>res.json())
-.then(data=>{
-
-const parser = new DOMParser();
-const xml = parser.parseFromString(data.contents,"text/xml");
-
-const items = xml.querySelectorAll("item");
-
-items.forEach(el=>{
-
-const title = el.querySelector("title").textContent;
-const link = el.querySelector("link").textContent;
-
-const card = document.createElement("div");
-card.className="card";
-
-card.innerHTML=`
-
-<div class="content">
-
-<div class="title">${title}</div>
-
-<div class="meta">
-מקור: Ynet
-</div>
-
-</div>
-
-`;
-
-card.onclick=()=>{
-window.open(link,"_blank");
-};
-
-document.getElementById("news").appendChild(card);
-
-});
-
-});
-
-function toggleDark(){
-
-document.body.classList.toggle("dark");
-
+// פונקציה לטעינת חדשות
+async function loadNews() {
+  const newsContainer = document.getElementById("news");
+  newsContainer.innerHTML = "";
+  for(const src of sources){
+    try{
+      const res = await fetch(src.url);
+      const data = await res.json();
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(data.contents,"text/xml");
+      const items = xml.querySelectorAll("item");
+      items.forEach(el=>{
+        const title = el.querySelector("title")?.textContent || "אין כותרת";
+        const link = el.querySelector("link")?.textContent || "#";
+        const img = el.querySelector("media\\:content")?.getAttribute("url") || "https://via.placeholder.com/600x200?text=FlashIL";
+        const card = document.createElement("div");
+        card.className="card";
+        card.innerHTML=`
+          <img src="${img}" alt="תמונה">
+          <div class="content">
+            <div class="title">${title}</div>
+            <div class="meta">מקור: ${src.name}</div>
+          </div>
+        `;
+        card.onclick=()=>{ window.open(link,"_blank"); };
+        newsContainer.appendChild(card);
+      });
+    }catch(e){
+      console.log("Error loading "+src.name, e);
+    }
+  }
 }
 
+// מצב כהה
+function toggleDark(){
+  document.body.classList.toggle("dark");
+}
+
+// טעינת חדשות בפעם הראשונה
+loadNews();
+
+// טעינה מחדש כל 5 דקות
+setInterval(loadNews, 300000);
 </script>
 
 </body>
