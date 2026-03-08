@@ -3,54 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlashIL | Live Feed</title>
+    <title>FLASH-IL | 0% DELAY</title>
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; }
-        header { background: #ed1c24; padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #fff; }
-        .stream { max-width: 600px; margin: auto; padding: 10px; }
-        .post { background: #111; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid #ed1c24; overflow: hidden; animation: fastIn 0.2s ease; }
-        @keyframes fastIn { from { opacity: 0; } to { opacity: 1; } }
-        .post img { width: 100%; height: 200px; object-fit: cover; background: #222; }
-        .post-content { padding: 12px; }
-        .post-title { font-size: 18px; font-weight: bold; color: #fff; text-decoration: none; line-height: 1.4; display: block; }
-        .info { display: flex; justify-content: space-between; font-size: 11px; color: #ed1c24; margin-top: 8px; font-weight: bold; }
-        #loader { text-align: center; padding: 40px; color: #ed1c24; font-weight: bold; font-size: 20px; }
+        body { margin: 0; background: #000; color: #fff; font-family: -apple-system, sans-serif; }
+        header { background: #ed1c24; padding: 15px; text-align: center; font-size: 22px; font-weight: 900; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #fff; }
+        .feed { max-width: 600px; margin: auto; padding: 10px; }
+        .item { background: #111; border-radius: 8px; margin-bottom: 12px; border-right: 4px solid #ed1c24; overflow: hidden; display: block; text-decoration: none; color: inherit; }
+        .item img { width: 100%; height: 200px; object-fit: cover; background: #222; }
+        .content { padding: 12px; }
+        .title { font-size: 18px; font-weight: bold; line-height: 1.4; margin-bottom: 8px; }
+        .meta { display: flex; justify-content: space-between; font-size: 11px; color: #ed1c24; font-weight: bold; }
+        #loading { text-align: center; padding: 50px; color: #ed1c24; font-size: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>FLASH-IL | דיווחים שוטפים</header>
+<header>FLASH-IL | מבזקים בזמן אמת</header>
 
-<div class="stream" id="output">
-    <div id="loader">מתחבר ללוויין...</div>
+<div class="feed" id="live-feed">
+    <div id="loading">מבצע חיבור מהיר למקורות...</div>
 </div>
 
 <script>
-    const SOURCES = [
+    // רשימת מקורות מאוחדת - הכל נכנס לפיד אחד
+    const feeds = [
         'https://www.hamal.co.il/rss',
         'https://www.ynet.co.il/Integration/StoryRss2.xml',
         'https://rss.walla.co.il/feed/1',
         'https://mako.co.il/rss/news-military.xml',
         'https://www.sport5.co.il/RSSFeed.aspx',
-        'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml',
         'https://www.one.co.il/cat/rss/feed.aspx'
     ];
 
-    async function getFlash() {
-        const out = document.getElementById('output');
-        let reports = [];
-
-        // משיכה מקבילית מכל המקורות בבת אחת
-        await Promise.all(SOURCES.map(async (url) => {
+    async function fetchAll() {
+        let posts = [];
+        // טעינה מקבילית של כל האתרים
+        await Promise.all(feeds.map(async (u) => {
             try {
-                const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}&v=${Date.now()}`);
+                // הוספת מזהה ייחודי כדי לעקוף את הדיליי של GitHub
+                const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(u)}&cachebust=${Date.now()}`);
                 const d = await r.json();
                 const xml = new DOMParser().parseFromString(d.contents, "text/xml");
                 
                 xml.querySelectorAll("item").forEach(el => {
                     const title = el.querySelector("title")?.textContent || "";
                     const link = el.querySelector("link")?.textContent || "";
-                    const time = new Date(el.querySelector("pubDate")?.textContent || "");
+                    const date = new Date(el.querySelector("pubDate")?.textContent || "");
                     const desc = el.querySelector("description")?.textContent || "";
                     let img = el.querySelector("enclosure")?.getAttribute("url") || "";
                     
@@ -59,31 +57,34 @@
                         if(m) img = m[1];
                     }
 
-                    if(title.length > 5) reports.push({ title, link, time, img });
+                    if(title.length > 5) posts.push({ title, link, date, img });
                 });
             } catch (e) {}
         }));
 
-        reports.sort((a, b) => b.time - a.time);
+        // מיון מהיר לפי זמן
+        posts.sort((a, b) => b.date - a.date);
 
-        if(reports.length > 0) {
-            out.innerHTML = reports.slice(0, 70).map(r => `
-                <div class="post">
-                    ${r.img ? `<img src="${r.img}" loading="lazy" onclick="window.open('${r.link}')">` : ''}
-                    <div class="post-content">
-                        <a href="${r.link}" target="_blank" class="post-title">${r.title}</a>
-                        <div class="info">
+        const container = document.getElementById('live-feed');
+        if(posts.length > 0) {
+            container.innerHTML = posts.slice(0, 80).map(p => `
+                <a href="${p.link}" target="_blank" class="item">
+                    ${p.img ? `<img src="${p.img}" loading="lazy">` : ''}
+                    <div class="content">
+                        <div class="title">${p.title}</div>
+                        <div class="meta">
                             <span>דיווח ישיר</span>
-                            <span>${r.time.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</span>
+                            <span>${p.date.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
                     </div>
-                </div>
+                </a>
             `).join('');
         }
     }
 
-    getFlash();
-    setInterval(getFlash, 30000); // רענון כל 30 שניות
+    fetchAll();
+    // רענון אוטומטי כל 40 שניות
+    setInterval(fetchAll, 40000);
 </script>
 </body>
 </html>
