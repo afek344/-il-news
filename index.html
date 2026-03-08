@@ -4,40 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FlashIL | Pro</title>
-
 <style>
 :root{--red:#ed1c24;--bg:#121212;--card:#1e1e1e;--text:#fff;}
 body{margin:0;font-family:Arial;background:var(--bg);color:var(--text);}
-header{background:var(--red);padding:15px;text-align:center;font-size:24px;font-weight:900;position:sticky;top:0;z-index:1000}
-
-.nav{display:flex;gap:10px;padding:10px;background:#1a1a1a;position:sticky;top:58px;overflow-x:auto}
-.nav-btn{border:none;padding:8px 18px;border-radius:20px;background:#333;color:white;cursor:pointer;font-weight:bold}
-.nav-btn.active{background:var(--red)}
-
-.container{max-width:600px;margin:auto;padding:10px}
-
-.card{background:var(--card);border-radius:15px;margin-bottom:20px;overflow:hidden;border-right:6px solid var(--red)}
-.card-img{width:100%;height:200px;object-fit:cover;background:#222}
-.card-content{padding:15px}
-.card-title{font-size:18px;font-weight:bold;margin-bottom:10px;cursor:pointer}
-.meta{display:flex;justify-content:space-between;font-size:12px;color:#aaa;border-top:1px solid #333;padding-top:10px}
-
-.source{background:#000;padding:3px 8px;border-radius:4px;font-size:11px}
-.share{background:#25D366;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:12px;cursor:pointer}
-
-#status{text-align:center;padding:40px;color:#888}
+header{background:var(--red);padding:15px;text-align:center;font-size:24px;font-weight:900;position:sticky;top:0;z-index:1000;}
+.nav{display:flex;gap:10px;padding:10px;background:#1a1a1a;position:sticky;top:58px;overflow-x:auto;}
+.nav-btn{border:none;padding:8px 18px;border-radius:20px;background:#333;color:white;cursor:pointer;font-weight:bold;}
+.nav-btn.active{background:var(--red);}
+.container{max-width:600px;margin:auto;padding:10px;}
+.card{background:var(--card);border-radius:15px;margin-bottom:20px;overflow:hidden;border-right:6px solid var(--red);}
+.card-img{width:100%;height:200px;object-fit:cover;background:#222;}
+.card-content{padding:15px;}
+.card-title{font-size:18px;font-weight:bold;margin-bottom:10px;cursor:pointer;}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:#aaa;border-top:1px solid #333;padding-top:10px;}
+.source{background:#000;padding:3px 8px;border-radius:4px;font-size:11px;}
+.share{background:#25D366;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:12px;cursor:pointer;}
+#status{text-align:center;padding:40px;color:#888;}
 </style>
 </head>
-
 <body>
 
 <header>FlashIL | Pro</header>
 
 <div class="nav">
-<button class="nav-btn active" onclick="changeCategory('news',this)">חדשות 🔥</button>
-<button class="nav-btn" onclick="changeCategory('money',this)">כלכלה 💰</button>
-<button class="nav-btn" onclick="changeCategory('sport',this)">ספורט ⚽</button>
-<button class="nav-btn" onclick="changeCategory('nadlan',this)">נדל"ן 🏠</button>
+<button class="nav-btn active" onclick="changeCategory('general',this)">חדשות 🔥</button>
+<button class="nav-btn" onclick="changeCategory('business',this)">כלכלה 💰</button>
+<button class="nav-btn" onclick="changeCategory('sports',this)">ספורט ⚽</button>
+<button class="nav-btn" onclick="changeCategory('technology',this)">טכנולוגיה 💻</button>
 </div>
 
 <div class="container" id="feed">
@@ -45,140 +38,49 @@ header{background:var(--red);padding:15px;text-align:center;font-size:24px;font-
 </div>
 
 <script>
+let currentCategory = 'general';
+const apiKey = "85b26a0ac6714192a6e5815892f56105";
 
-let currentCategory="news";
+async function fetchNews() {
+    const feed = document.getElementById("feed");
+    feed.innerHTML='<div id="status">טוען דיווחים...</div>';
 
-const SOURCES={
-news:[
-{name:"Ynet",url:"https://www.ynet.co.il/Integration/StoryRss2.xml"},
-{name:"וואלה",url:"https://rss.walla.co.il/feed/1"}
-],
+    try {
+        const res = await fetch(`https://newsapi.org/v2/top-headlines?country=il&category=${currentCategory}&pageSize=20&apiKey=${apiKey}`);
+        const data = await res.json();
 
-money:[
-{name:"כלכליסט",url:"https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml"},
-{name:"גלובס",url:"https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=2"}
-],
+        if(!data.articles || data.articles.length === 0){
+            feed.innerHTML='<div id="status">אין דיווחים כרגע</div>';
+            return;
+        }
 
-sport:[
-{name:"ONE",url:"https://www.one.co.il/rss/"},
-{name:"ספורט5",url:"https://www.sport5.co.il/RSSFeed.aspx?cat=1"}
-],
-
-nadlan:[
-{name:"גלובס נדלן",url:"https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=585"},
-{name:"כלכליסט נדלן",url:"https://www.calcalist.co.il/GeneralRSS/0,16335,L-3940,00.xml"}
-]
-};
-
-async function fetchNews(){
-
-const feed=document.getElementById("feed");
-const sources=SOURCES[currentCategory];
-let all=[];
-
-for(const s of sources){
-
-try{
-
-const res=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(s.url)}`);
-
-const text=await res.text();
-
-const parser=new DOMParser();
-const xml=parser.parseFromString(text,"text/xml");
-
-const items=xml.querySelectorAll("item");
-
-items.forEach(el=>{
-
-const title=el.querySelector("title")?.textContent||"";
-const link=el.querySelector("link")?.textContent||"";
-const desc=el.querySelector("description")?.textContent||"";
-const pub=el.querySelector("pubDate")?.textContent||"";
-
-let img="";
-
-const media=el.querySelector("media\\:content,enclosure");
-
-if(media) img=media.getAttribute("url");
-
-if(!img){
-const match=desc.match(/src="([^">]+)/);
-if(match) img=match[1];
+        feed.innerHTML = data.articles.map(a=>`
+            <div class="card">
+                ${a.urlToImage ? `<img src="${a.urlToImage}" class="card-img" onerror="this.src='https://via.placeholder.com/600x300?text=No+Image'">` : `<img src="https://via.placeholder.com/600x300?text=No+Image" class="card-img">`}
+                <div class="card-content">
+                    <div class="card-title" onclick="window.open('${a.url}','_blank')">${a.title}</div>
+                    <div class="meta">
+                        <div><span class="source">FlashIL</span></div>
+                        <button class="share" onclick="window.open('https://wa.me/?text=${encodeURIComponent(a.title + ' ' + a.url)}')">שתף</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        feed.innerHTML='<div id="status">שגיאה בטעינת החדשות</div>';
+        console.log(e);
+    }
 }
 
-if(title && link){
-
-all.push({
-title:title,
-link:link,
-img:img,
-source:s.name,
-date:new Date(pub)
-});
-
+function changeCategory(cat, btn){
+    currentCategory=cat;
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    fetchNews();
 }
 
-});
-
-}catch(e){console.log("error",s.name)}
-
-}
-
-all.sort((a,b)=>b.date-a.date);
-
-if(all.length===0){
-
-feed.innerHTML='<div id="status">אין דיווחים כרגע</div>';
-return;
-
-}
-
-feed.innerHTML=all.map(n=>`
-
-<div class="card">
-
-${n.img?`<img src="${n.img}" class="card-img" onerror="this.style.display='none'">`:""}
-
-<div class="card-content">
-
-<div class="card-title" onclick="window.open('${n.link}','_blank')">${n.title}</div>
-
-<div class="meta">
-
-<div>
-<span class="source">${n.source}</span>
-</div>
-
-<button class="share"
-onclick="window.open('https://wa.me/?text=${encodeURIComponent(n.title+" "+n.link)}')">
-שתף
-</button>
-
-</div>
-
-</div>
-</div>
-
-`).join("");
-
-}
-
-function changeCategory(cat,btn){
-
-currentCategory=cat;
-
-document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
-btn.classList.add("active");
-
-document.getElementById("feed").innerHTML='<div id="status">טוען...</div>';
-
+// הפעלה ראשונה
 fetchNews();
-
-}
-
-fetchNews();
-
 </script>
 
 </body>
