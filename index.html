@@ -3,47 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IL-NEWS | חמ"ל חי</title>
+    <title>IL-NEWS | חדשות בזמן אמת</title>
     <style>
         :root { --red: #ed1c24; --blue: #002244; --bg: #f4f6f9; }
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: #333; }
-        header { background: var(--red); color: white; padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        header { background: var(--red); color: white; padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .container { max-width: 600px; margin: 10px auto; padding: 0 10px; }
         .card { background: white; border-radius: 8px; margin-bottom: 12px; padding: 15px; border-right: 6px solid var(--blue); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .time { color: var(--red); font-weight: bold; font-size: 13px; display: block; margin-bottom: 5px; }
-        .title { font-size: 18px; font-weight: bold; line-height: 1.4; }
-        #status { text-align: center; padding: 10px; font-size: 12px; color: #666; }
+        .title { font-size: 18px; font-weight: bold; line-height: 1.4; margin-bottom: 8px; }
+        .time { color: #666; font-size: 13px; font-weight: bold; display: block; }
     </style>
 </head>
 <body>
-    <header>IL-NEWS | חמ"ל מבזקים</header>
-    <div id="status">מתחבר למקורות המידע...</div>
-    <div class="container" id="feed"></div>
-<p style="text-align: center;">האפליקציה בטעינה...</p>
-    <script>
-        async function fetchNews() {
-            const proxy = "https://api.allorigins.win/get?url=";
-            const target = encodeURIComponent("https://www.jdn.co.il/mivzakim/feed/");
-            try {
-                const res = await fetch(proxy + target + "&t=" + new Date().getTime());
-                const data = await res.json();
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(data.contents, "text/xml");
-                const items = xml.querySelectorAll("item");
-                const feed = document.getElementById('feed');
-                feed.innerHTML = '';
-                items.forEach((item, i) => {
-                    if(i > 14) return;
-                    const title = item.querySelector("title").textContent;
-                    const date = new Date(item.querySelector("pubDate").textContent);
-                    const time = date.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
-                    feed.innerHTML += `<div class="card"><span class="time">${time} | מבזק אמת</span><div class="title">${title}</div></div>`;
-                });
-                document.getElementById('status').innerText = "עודכן ב: " + new Date().toLocaleTimeString();
-            } catch (e) { document.getElementById('status').innerText = "שגיאה בחיבור"; }
-        }
-        fetchNews();
-        setInterval(fetchNews, 30000);
-    </script>
+
+<header>IL-NEWS | חדשות בזמן אמת</header>
+
+<div class="container" id="feed">
+    <div class="card">
+        <div class="title">טוען חדשות אחרונות...</div>
+    </div>
+</div>
+
+<script>
+    // פונקציה שמייצרת חדשות "בכאילו" כדי שתראה איך זה עובד
+    function loadNews() {
+        const newsData = [
+            { title: "ברוך הבא לאפליקציה שלך!", time: "לפני דקה" },
+            { title: "הקוד עודכן בהצלחה ב-GitHub", time: "לפני 5 דקות" },
+            { title: "כאן יופיעו דיווחי חדשות מהארץ והעולם", time: "לפני 10 דקות" }
+        ];
+
+        const feed = document.getElementById('feed');
+        feed.innerHTML = ''; // מנקה את הודעת הטעינה
+
+        newsData.forEach(item => {
+            feed.innerHTML += `
+                <div class="card">
+                    <div class="title">${item.title}</div>
+                    <div class="time">${item.time} • מערכת IL-NEWS</div>
+                </div>
+            `;
+        });
+    }
+
+    // הפעלת הפונקציה
+    loadNews();
+</script>
+
 </body>
 </html>
