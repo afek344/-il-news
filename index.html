@@ -3,103 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlashIL | פיד חדשות ישיר</title>
+    <title>FlashIL | דיווחים בזמן אמת</title>
     <style>
-        :root { --red: #ed1c24; --bg: #0f0f0f; --card: #1a1a1a; --text: #ffffff; }
-        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); }
+        :root { --red: #ed1c24; --bg: #0a0a0a; --card: #161616; --text: #ffffff; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
         
+        /* כותרת דקה ומקצועית */
         header { 
-            background: var(--red); 
-            padding: 15px; 
-            text-align: center; 
-            font-size: 26px; 
-            font-weight: 900; 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-            letter-spacing: 1px;
+            background: var(--red); padding: 12px; text-align: center; 
+            font-size: 22px; font-weight: 900; position: sticky; top: 0; 
+            z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        .container { max-width: 650px; margin: auto; padding: 10px; }
+        /* פס מבזק רץ לחדשות דחופות */
+        .ticker { background: #000; color: #ffeb3b; padding: 5px; font-size: 14px; white-space: nowrap; overflow: hidden; border-bottom: 1px solid #333; }
+        .ticker-text { display: inline-block; animation: scroll 25s linear infinite; font-weight: bold; }
+        @keyframes scroll { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+        .container { max-width: 600px; margin: auto; padding: 10px; }
 
         .card { 
-            background: var(--card); 
-            border-radius: 12px; 
-            margin-bottom: 15px; 
-            overflow: hidden; 
-            border-right: 4px solid var(--red);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
+            background: var(--card); border-radius: 12px; margin-bottom: 12px; 
+            overflow: hidden; border-right: 5px solid var(--red);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4); animation: slide 0.3s ease;
         }
+        @keyframes slide { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        .card-img { width: 100%; height: 220px; object-fit: cover; background: #222; display: block; }
+        .card-img { width: 100%; height: 200px; object-fit: cover; background: #222; cursor: pointer; }
+        .card-content { padding: 12px; }
+        .card-title { font-size: 17px; font-weight: bold; line-height: 1.4; color: #fff; text-decoration: none; display: block; margin-bottom: 8px; }
         
-        .card-content { padding: 15px; }
-        
-        .card-title { 
-            font-size: 19px; 
-            font-weight: bold; 
-            line-height: 1.4; 
-            margin-bottom: 10px; 
-            color: white; 
-            text-decoration: none; 
-            display: block; 
-            cursor: pointer; 
-        }
+        .meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #aaa; padding-top: 8px; border-top: 1px solid #222; }
+        .source { background: #333; color: var(--red); padding: 2px 6px; border-radius: 4px; font-weight: 800; }
+        .time { font-weight: bold; color: #eee; }
 
-        .meta { 
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 13px; 
-            color: #bbb; 
-            border-top: 1px solid #333; 
-            padding-top: 10px; 
-            align-items: center; 
-        }
-
-        .source-tag { 
-            background: #333; 
-            color: var(--red); 
-            padding: 2px 8px; 
-            border-radius: 4px; 
-            font-weight: 800; 
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-
-        .share-btn { 
-            background: #25D366; 
-            color: white; 
-            border: none; 
-            padding: 6px 14px; 
-            border-radius: 6px; 
-            font-size: 13px; 
-            cursor: pointer; 
-            font-weight: bold;
-        }
-
-        #loading-status { text-align: center; padding: 40px; color: #666; font-size: 18px; font-weight: bold; }
-
-        /* אנימציה חלקה לכניסת כתבות */
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .card { animation: slideIn 0.3s ease-out; }
+        #status { text-align: center; padding: 50px; color: #666; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>FlashIL | מבזקים בזמן אמת</header>
+<header>FlashIL | דיווחים ישירים</header>
+<div class="ticker"><div class="ticker-text" id="ticker-content">טוען מבזקים אחרונים מכל המקורות...</div></div>
 
-<div class="container" id="feed">
-    <div id="loading-status">טוען כמויות של חדשות...</div>
+<div class="container" id="main-feed">
+    <div id="status">מתחבר למקורות המידע...</div>
 </div>
 
 <script>
-    // רשימת מקורות ענקית כדי לקבל מקסימום תוכן
-    const RSS_SOURCES = [
-        { name: 'חמ"ל', url: 'https://www.hamal.co.il/rss' },
-        { name: 'Ynet', url: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
-        { name: 'וואלה', url: 'https
+    // רשימת מקורות מקסימלית ל-0 עיכוב
+    const SOURCES =
