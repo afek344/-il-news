@@ -6,12 +6,12 @@
     <title>FlashIL | Pro</title>
     <style>
         :root { --red: #ed1c24; --bg: #121212; --card: #1e1e1e; --text: #ffffff; }
-        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); }
         header { background: var(--red); padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 15px rgba(0,0,0,0.5); }
         .nav { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #1a1a1a; position: sticky; top: 58px; z-index: 999; border-bottom: 1px solid #333; scrollbar-width: none; }
-        .nav-btn { border: none; padding: 8px 18px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; transition: 0.2s; font-size: 14px; }
-        .nav-btn.active { background: var(--red); transform: scale(1.05); }
-        .container { max-width: 600px; margin: auto; padding: 10px; }
+        .nav-btn { border: none; padding: 8px 18px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 14px; }
+        .nav-btn.active { background: var(--red); }
+        .container { max-width: 600px; margin: auto; padding: 10px; min-height: 80vh; }
         .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 6px solid var(--red); box-shadow: 0 10px 20px rgba(0,0,0,0.4); animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .card-img { width: 100%; height: 230px; object-fit: cover; background: #222; display: block; }
@@ -20,7 +20,7 @@
         .meta { display: flex; justify-content: space-between; font-size: 13px; color: #aaa; border-top: 1px solid #333; padding-top: 12px; align-items: center; }
         .source-tag { background: #000; color: #fff; padding: 3px 10px; border-radius: 6px; font-weight: 900; font-size: 11px; }
         .share-btn { background: #25D366; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; }
-        #status { text-align: center; padding: 60px; font-size: 20px; color: #666; font-weight: bold; }
+        #status { text-align: center; padding: 60px; font-size: 18px; color: #888; }
     </style>
 </head>
 <body>
@@ -28,86 +28,96 @@
 <header>FlashIL | Pro</header>
 
 <div class="nav">
-    <button class="nav-btn active" onclick="filter('news', this)">חדשות 🔥</button>
-    <button class="nav-btn" onclick="filter('money', this)">כלכלה 💰</button>
-    <button class="nav-btn" onclick="filter('sport', this)">ספורט ⚽</button>
-    <button class="nav-btn" onclick="filter('nadlan', this)">נדל"ן 🏠</button>
+    <button class="nav-btn active" onclick="changeCategory('news', this)">חדשות 🔥</button>
+    <button class="nav-btn" onclick="changeCategory('money', this)">כלכלה 💰</button>
+    <button class="nav-btn" onclick="changeCategory('sport', this)">ספורט ⚽</button>
+    <button class="nav-btn" onclick="changeCategory('nadlan', this)">נדל"ן 🏠</button>
 </div>
 
 <div class="container" id="feed">
-    <div id="status">טוען דיווחים...</div>
+    <div id="status">מתחבר למקורות המידע...</div>
 </div>
 
 <script>
-    let allNews = [];
+    let currentCategory = 'news';
     const FEEDS = [
         { name: 'חמ"ל', type: 'news', url: 'https://www.hamal.co.il/rss' },
-        { name: 'Ynet', type: 'news', url: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
         { name: 'וואלה', type: 'news', url: 'https://rss.walla.co.il/feed/1' },
+        { name: 'Ynet', type: 'news', url: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
         { name: 'כלכליסט', type: 'money', url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml' },
-        { name: 'דה מרקר', type: 'money', url: 'https://www.themarker.com/srv/rss/all' },
         { name: 'ספורט 5', type: 'sport', url: 'https://www.sport5.co.il/RSSFeed.aspx' },
         { name: 'ONE', type: 'sport', url: 'https://www.one.co.il/cat/rss/feed.aspx' },
-        { name: 'מרכז הנדל"ן', type: 'nadlan', url: 'https://www.nadlan.org.il/feed/' }
+        { name: 'נדלן ניוז', type: 'nadlan', url: 'https://www.nadlan.org.il/feed/' }
     ];
 
-    async function load() {
-        allNews = [];
+    async function fetchNews() {
+        const feedContainer = document.getElementById('feed');
+        let html = '';
+        let foundAny = false;
+
         for (const f of FEEDS) {
+            if (f.type !== currentCategory) continue;
+
             try {
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&api_key=oyncy7v7z8x8u8u8u8u8u8u8u8u8u8u8u8u8u8u8&count=20&t=${Date.now()}`);
-                const data = await res.json();
-                if (data.status === 'ok') {
-                    data.items.forEach(i => {
-                        let img = i.enclosure?.link || i.thumbnail || '';
-                        if (!img && i.description) {
-                            const m = i.description.match(/src="([^"> ]+)"/);
-                            if (m) img = m[1];
-                        }
-                        allNews.push({ ...i, title: i.title.replace(/<\/?[^>]+(>|$)/g, ""), source: f.name, type: f.type, image: img });
-                    });
-                }
-            } catch (e) {}
+                // שימוש במנהרה ישירה לעקיפת חסימות
+                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(f.url)}`);
+                const data = await response.json();
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(data.contents, "text/xml");
+                const items = xml.querySelectorAll("item");
+
+                items.forEach((el, index) => {
+                    if (index > 10) return; // מגבלה לכל מקור
+                    foundAny = true;
+                    const title = el.querySelector("title")?.textContent || "";
+                    const link = el.querySelector("link")?.textContent || "";
+                    const pubDate = el.querySelector("pubDate")?.textContent || "";
+                    const description = el.querySelector("description")?.textContent || "";
+                    
+                    let img = "";
+                    const media = el.getElementsByTagName("media:content")[0] || el.getElementsByTagName("enclosure")[0];
+                    if (media) img = media.getAttribute("url");
+                    if (!img) {
+                        const imgMatch = description.match(/src="([^"> ]+)"/);
+                        if (imgMatch) img = imgMatch[1];
+                    }
+
+                    const time = new Date(pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
+
+                    html += `
+                        <div class="card">
+                            ${img ? `<img src="${img}" class="card-img" onerror="this.style.display='none'">` : ''}
+                            <div class="card-content">
+                                <div class="card-title" onclick="window.open('${link}', '_blank')">${title}</div>
+                                <div class="meta">
+                                    <div><span class="source-tag">${f.name}</span><span style="margin-right:8px">${time}</span></div>
+                                    <button class="share-btn" onclick="window.open('https://wa.me/?text=${encodeURIComponent(title + ' ' + link)}')">שתף</button>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            } catch (e) { console.error("Error fetching " + f.name); }
         }
-        allNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-        
-        // תיקון: מציג ישר את הקטגוריה הראשונה אחרי הטעינה
-        const activeType = document.querySelector('.nav-btn.active').getAttribute('onclick').match(/'([^']+)'/)[1];
-        render(allNews.filter(n => n.type === activeType));
+
+        if (!foundAny) {
+            feedContainer.innerHTML = '<div id="status">מנסה להתחבר שוב... בדוק חיבור אינטרנט.</div>';
+        } else {
+            feedContainer.innerHTML = html;
+        }
     }
 
-    function render(list) {
-        const feed = document.getElementById('feed');
-        if (!list.length) {
-            feed.innerHTML = '<div id="status">אין דיווחים כרגע. נסה לעבור קטגוריה.</div>';
-            return;
-        }
-        feed.innerHTML = '';
-        list.forEach(item => {
-            const time = new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
-            feed.innerHTML += `
-                <div class="card">
-                    ${item.image ? `<img src="${item.image}" class="card-img" onerror="this.remove()">` : ''}
-                    <div class="card-content">
-                        <div class="card-title" onclick="window.open('${item.link}', '_blank')">${item.title}</div>
-                        <div class="meta">
-                            <div><span class="source-tag">${item.source}</span><span style="margin-right:8px">${time}</span></div>
-                            <button class="share-btn" onclick="window.open('https://wa.me/?text=${encodeURIComponent(item.title + ' ' + item.link)}')">שתף</button>
-                        </div>
-                    </div>
-                </div>`;
-        });
-    }
-
-    function filter(type, btn) {
+    function changeCategory(type, btn) {
+        currentCategory = type;
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        render(allNews.filter(n => n.type === type));
-        window.scrollTo({top: 0, behavior: 'smooth'});
+        document.getElementById('feed').innerHTML = '<div id="status">טוען ' + btn.innerText + '...</div>';
+        fetchNews();
     }
 
-    load();
-    setInterval(load, 120000);
+    // הפעלה ראשונה
+    fetchNews();
+    // רענון כל 3 דקות
+    setInterval(fetchNews, 180000);
 </script>
 </body>
 </html>
