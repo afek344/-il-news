@@ -9,18 +9,18 @@
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); }
         header { background: var(--red); padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 15px rgba(0,0,0,0.5); }
         .nav { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #1a1a1a; position: sticky; top: 58px; z-index: 999; border-bottom: 1px solid #333; scrollbar-width: none; }
-        .nav-btn { border: none; padding: 8px 18px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 14px; }
-        .nav-btn.active { background: var(--red); }
+        .nav-btn { border: none; padding: 8px 18px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 14px; transition: 0.2s; }
+        .nav-btn.active { background: var(--red); transform: scale(1.05); }
         .container { max-width: 600px; margin: auto; padding: 10px; min-height: 80vh; }
-        .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 6px solid var(--red); box-shadow: 0 10px 20px rgba(0,0,0,0.4); animation: fadeIn 0.5s ease-out; }
+        .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 6px solid var(--red); box-shadow: 0 10px 20px rgba(0,0,0,0.4); animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .card-img { width: 100%; height: 230px; object-fit: cover; background: #222; display: block; }
-        .card-content { padding: 18px; }
-        .card-title { font-size: 19px; font-weight: bold; line-height: 1.4; margin-bottom: 12px; color: white; text-decoration: none; display: block; cursor: pointer; }
-        .meta { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; border-top: 1px solid #333; padding-top: 12px; align-items: center; }
-        .source-tag { background: #000; color: #fff; padding: 3px 10px; border-radius: 6px; font-weight: 900; font-size: 11px; }
-        .share-btn { background: #25D366; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; }
-        #status { text-align: center; padding: 60px; font-size: 18px; color: #888; }
+        .card-img { width: 100%; height: 210px; object-fit: cover; background: #222; display: block; }
+        .card-content { padding: 15px; }
+        .card-title { font-size: 18px; font-weight: bold; line-height: 1.4; margin-bottom: 10px; color: white; text-decoration: none; display: block; cursor: pointer; }
+        .meta { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; border-top: 1px solid #333; padding-top: 10px; align-items: center; }
+        .source-tag { background: #000; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        .share-btn { background: #25D366; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; }
+        #status { text-align: center; padding: 50px; color: #888; }
     </style>
 </head>
 <body>
@@ -40,33 +40,42 @@
 
 <script>
     let currentCategory = 'news';
-    const FEEDS = [
-        { name: 'חמ"ל', type: 'news', url: 'https://www.hamal.co.il/rss' },
-        { name: 'Ynet', type: 'news', url: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
-        { name: 'וואלה', type: 'news', url: 'https://rss.walla.co.il/feed/1' },
-        { name: 'כלכליסט', type: 'money', url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml' },
-        { name: 'ספורט 5', type: 'sport', url: 'https://www.sport5.co.il/RSSFeed.aspx' },
-        { name: 'נדלן ניוז', type: 'nadlan', url: 'https://www.nadlan.org.il/feed/' }
-    ];
+
+    // חילקתי את המקורות לפי קטגוריות מדויקות
+    const SOURCES = {
+        news: [
+            { name: 'חמ"ל', url: 'https://www.hamal.co.il/rss' },
+            { name: 'Ynet', url: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
+            { name: 'וואלה', url: 'https://rss.walla.co.il/feed/1' }
+        ],
+        money: [
+            { name: 'כלכליסט', url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml' },
+            { name: 'TheMarker', url: 'https://www.themarker.com/srv/rss/all' }
+        ],
+        sport: [
+            { name: 'ספורט 5', url: 'https://www.sport5.co.il/RSSFeed.aspx' },
+            { name: 'ONE', url: 'https://www.one.co.il/cat/rss/feed.aspx' }
+        ],
+        nadlan: [
+            { name: 'מרכז הנדל"ן', url: 'https://www.nadlan.org.il/feed/' },
+            { name: 'ביזפורטל נדל"ן', url: 'https://www.bizportal.co.il/rss/realestat' }
+        ]
+    };
 
     async function fetchNews() {
         const feedContainer = document.getElementById('feed');
-        let html = '';
-        let foundAny = false;
+        const activeSources = SOURCES[currentCategory];
+        let allItems = [];
 
-        for (const f of FEEDS) {
-            if (f.type !== currentCategory) continue;
+        for (const s of activeSources) {
             try {
-                // שימוש במתווך AllOrigins לעקיפת חסימות
-                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(f.url)}&t=${Date.now()}`);
+                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(s.url)}&t=${Date.now()}`);
                 const data = await res.json();
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(data.contents, "text/xml");
                 const items = xml.querySelectorAll("item");
 
-                items.forEach((el, index) => {
-                    if (index > 8) return; 
-                    foundAny = true;
+                items.forEach(el => {
                     const title = el.querySelector("title")?.textContent || "";
                     const link = el.querySelector("link")?.textContent || "";
                     const pubDate = el.querySelector("pubDate")?.textContent || "";
@@ -80,25 +89,30 @@
                         if (imgMatch) img = imgMatch[1];
                     }
 
-                    const time = new Date(pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
-
-                    html += `
-                        <div class="card">
-                            ${img ? `<img src="${img}" class="card-img" onerror="this.style.display='none'">` : ''}
-                            <div class="card-content">
-                                <div class="card-title" onclick="window.open('${link}', '_blank')">${title}</div>
-                                <div class="meta">
-                                    <div><span class="source-tag">${f.name}</span><span style="margin-right:8px">${time}</span></div>
-                                    <button class="share-btn" onclick="window.open('https://wa.me/?text=${encodeURIComponent(title + ' ' + link)}')">שתף</button>
-                                </div>
-                            </div>
-                        </div>`;
+                    allItems.push({ title, link, pubDate: new Date(pubDate), img, source: s.name });
                 });
-            } catch (e) { console.log("Skip: " + f.name); }
+            } catch (e) { console.error(s.name + " failed"); }
         }
 
-        if (foundAny) feedContainer.innerHTML = html;
-        else feedContainer.innerHTML = '<div id="status">טוען... נסה לרענן בעוד רגע.</div>';
+        // מיון לפי זמן (החדש ביותר למעלה)
+        allItems.sort((a, b) => b.pubDate - a.pubDate);
+
+        if (allItems.length > 0) {
+            feedContainer.innerHTML = allItems.map(item => `
+                <div class="card">
+                    ${item.img ? `<img src="${item.img}" class="card-img" onerror="this.style.display='none'">` : ''}
+                    <div class="card-content">
+                        <div class="card-title" onclick="window.open('${item.link}', '_blank')">${item.title}</div>
+                        <div class="meta">
+                            <div><span class="source-tag">${item.source}</span><span style="margin-right:8px">${item.pubDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</span></div>
+                            <button class="share-btn" onclick="window.open('https://wa.me/?text=${encodeURIComponent(item.title + ' ' + item.link)}')">שתף</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            feedContainer.innerHTML = '<div id="status">לא נמצאו דיווחים כרגע.</div>';
+        }
     }
 
     function changeCategory(type, btn) {
@@ -107,10 +121,11 @@
         btn.classList.add('active');
         document.getElementById('feed').innerHTML = '<div id="status">טוען ' + btn.innerText + '...</div>';
         fetchNews();
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     fetchNews();
-    setInterval(fetchNews, 120000);
+    setInterval(fetchNews, 60000); // רענון כל דקה
 </script>
 </body>
 </html>
