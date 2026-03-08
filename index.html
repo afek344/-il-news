@@ -1,200 +1,95 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FlashIL – by Afek</title>
-
-<style>
-
-body{
-margin:0;
-font-family:Arial;
-background:#f2f2f2;
-}
-
-header{
-background:#e30613;
-color:white;
-padding:15px;
-text-align:center;
-font-size:22px;
-font-weight:bold;
-position:sticky;
-top:0;
-}
-
-.container{
-max-width:600px;
-margin:auto;
-padding:10px;
-}
-
-.card{
-background:white;
-border-radius:12px;
-margin-bottom:15px;
-overflow:hidden;
-box-shadow:0 2px 8px rgba(0,0,0,0.15);
-cursor:pointer;
-}
-
-.card img{
-width:100%;
-height:200px;
-object-fit:cover;
-}
-
-.content{
-padding:12px;
-}
-
-.title{
-font-size:18px;
-font-weight:bold;
-margin-bottom:6px;
-}
-
-.meta{
-font-size:13px;
-color:#666;
-}
-
-button{
-position:fixed;
-bottom:20px;
-left:20px;
-border:none;
-background:black;
-color:white;
-padding:10px 15px;
-border-radius:20px;
-}
-
-.dark{
-background:#121212;
-color:white;
-}
-
-.dark .card{
-background:#1e1e1e;
-}
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashIL | פיד חדשות אינסופי</title>
+    <style>
+        :root { --red: #ed1c24; --black: #1a1a1a; --bg: #f0f2f5; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: #1c1e21; }
+        header { background: var(--red); color: white; padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .container { max-width: 650px; margin: 10px auto; padding: 0 10px; }
+        
+        .card { background: white; border-radius: 15px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; border-right: 8px solid var(--black); transition: 0.3s; }
+        .card:hover { transform: translateY(-3px); }
+        
+        .card-image { width: 100%; height: 250px; object-fit: cover; background: #eee; display: block; }
+        .card-content { padding: 18px; }
+        
+        .title { font-size: 20px; font-weight: bold; line-height: 1.4; margin-bottom: 12px; color: #000; }
+        .meta { display: flex; align-items: center; gap: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+        .source-tag { background: var(--black); color: white; padding: 3px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; }
+        .time { color: #65676b; font-size: 13px; font-weight: bold; }
+        
+        #status { text-align: center; padding: 50px; font-size: 18px; color: #666; font-weight: bold; }
+        .loading-dots:after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
+        @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .5em 0 0 rgba(0,0,0,0), 1em 0 0 rgba(0,0,0,0); } 40% { color: #666; text-shadow: .5em 0 0 rgba(0,0,0,0), 1em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .5em 0 0 #666, 1em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .5em 0 0 #666, 1em 0 0 #666; } }
+    </style>
 </head>
-
 <body>
 
-<header>
-FlashIL – by Afek
-</header>
+<header>FlashIL | דיווחים בזמן אמת</header>
 
-<div class="container" id="news"></div>
-
-<button onclick="toggleDark()">🌙</button>
-
-<script>
-
-const feeds = [
-
-{
-name:"Ynet",
-url:"https://api.allorigins.win/get?url="+encodeURIComponent("https://www.ynet.co.il/Integration/StoryRss2.xml")
-},
-
-{
-name:"חדשות 12",
-url:"https://api.allorigins.win/get?url="+encodeURIComponent("https://www.mako.co.il/feeds/12news.xml")
-}
-
-];
-
-async function loadNews(){
-
-const container=document.getElementById("news");
-container.innerHTML="";
-
-for(const feed of feeds){
-
-try{
-
-const res=await fetch(feed.url);
-const data=await res.json();
-
-const parser=new DOMParser();
-const xml=parser.parseFromString(data.contents,"text/xml");
-
-const items=xml.querySelectorAll("item");
-
-items.forEach(item=>{
-
-const title=item.querySelector("title")?.textContent;
-const link=item.querySelector("link")?.textContent;
-let img = "";
-
-// ניסיון לקחת תמונה מסוג media
-const media = item.querySelector("media\\:content");
-if (media && media.getAttribute("url")) {
-  img = media.getAttribute("url");
-}
-
-// ניסיון לקחת תמונה מתוך description
-if (!img) {
-  const desc = item.querySelector("description")?.textContent;
-  const match = desc ? desc.match(/src="(.*?)"/) : null;
-  if (match) {
-    img = match[1];
-  }
-}
-
-// אם אין בכלל תמונה
-if (!img) {
-  img = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200";
-}
-
-const card=document.createElement("div");
-
-card.className="card";
-
-card.innerHTML=`
-
-<img src="${img}">
-
-<div class="content">
-
-<div class="title">${title}</div>
-
-<div class="meta">מקור: ${feed.name}</div>
-
+<div class="container" id="feed">
+    <div id="status" class="loading-dots">מתחבר למקורות, מביא עשרות דיווחים</div>
 </div>
 
-`;
+<script>
+    const SOURCES = [
+        { name: 'חמ"ל', url: 'https://www.hamal.co.il/rss' },
+        { name: 'וואלה', url: 'https://rss.walla.co.il/feed/1' },
+        { name: 'מעריב', url: 'https://www.maariv.co.il/Rss/RssFeeds0.aspx' }
+    ];
 
-card.onclick=()=>window.open(link);
+    async function fetchAllNews() {
+        const feedElement = document.getElementById('feed');
+        let allItems = [];
 
-container.appendChild(card);
+        for (const source of SOURCES) {
+            try {
+                // שימוש במפתח API ובהגדרה ל-50 כתבות מכל מקור (סך הכל עד 150 כתבות!)
+                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&api_key=oyncy7v7z8x8u8u8u8u8u8u8u8u8u8u8u8u8u8u8&count=50`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    const items = data.items.map(item => {
+                        let imageUrl = item.enclosure?.link || item.thumbnail || '';
+                        
+                        // חיפוש תמונה מתקדם בתוך התיאור (חשוב לחמ"ל)
+                        if (!imageUrl && item.description) {
+                            const imgMatch = item.description.match(/<img[^>]+src="([^"> ]+)"/);
+                            if (imgMatch) imageUrl = imgMatch[1];
+                        }
 
-});
+                        return {
+                            ...item,
+                            sourceName: source.name,
+                            image: imageUrl,
+                            timestamp: new Date(item.pubDate).getTime()
+                        };
+                    });
+                    allItems = [...allItems, ...items];
+                }
+            } catch (e) { console.error("Error loading " + source.name); }
+        }
 
-}catch(e){
+        // מיון כל הכתבות יחד מהחדש ביותר לישן ביותר
+        allItems.sort((a, b) => b.timestamp - a.timestamp);
 
-console.log(e);
-
-}
-
-}
-
-}
-
-function toggleDark(){
-
-document.body.classList.toggle("dark");
-
-}
-
-loadNews();
-
-</script>
-
-</body>
-</html>
+        if (allItems.length > 0) {
+            feedElement.innerHTML = '';
+            allItems.forEach(item => {
+                const timeStr = new Date(item.timestamp).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
+                // אם אין תמונה, נשים תמונת רקע נייטרלית או שלא נציג בכלל
+                const imgHtml = item.image ? `<img src="${item.image}" class="card-image" loading="lazy" onerror="this.style.display='none'">` : '';
+                
+                feedElement.innerHTML += `
+                    <div class="card" onclick="window.open('${item.link}', '_blank')">
+                        ${imgHtml}
+                        <div class="card-content">
+                            <div class="title">${item.title}</div>
+                            <div class="meta">
+                                <span class="source-tag">${item.sourceName}</span>
+                                <span class="time">${timeStr}</span>
+                            </div>
+                        </div>
