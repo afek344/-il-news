@@ -7,28 +7,19 @@
     <style>
         :root { --red: #ed1c24; --bg: #121212; --card: #1e1e1e; --text: #ffffff; }
         body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
-        
         header { background: var(--red); padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 15px rgba(0,0,0,0.5); }
-        
         .nav { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #1a1a1a; position: sticky; top: 58px; z-index: 999; border-bottom: 1px solid #333; scrollbar-width: none; }
-        .nav::-webkit-scrollbar { display: none; }
         .nav-btn { border: none; padding: 8px 18px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; transition: 0.2s; font-size: 14px; }
         .nav-btn.active { background: var(--red); transform: scale(1.05); }
-        
         .container { max-width: 600px; margin: auto; padding: 10px; }
-        
-        .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 6px solid var(--red); box-shadow: 0 10px 20px rgba(0,0,0,0.4); transition: 0.3s; animation: fadeIn 0.5s ease-in; }
+        .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 6px solid var(--red); box-shadow: 0 10px 20px rgba(0,0,0,0.4); animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
         .card-img { width: 100%; height: 230px; object-fit: cover; background: #222; display: block; }
         .card-content { padding: 18px; }
         .card-title { font-size: 20px; font-weight: bold; line-height: 1.4; margin-bottom: 12px; cursor: pointer; color: white; text-decoration: none; display: block; }
-        
         .meta { display: flex; justify-content: space-between; font-size: 13px; color: #aaa; border-top: 1px solid #333; padding-top: 12px; align-items: center; }
         .source-tag { background: #000; color: #fff; padding: 3px 10px; border-radius: 6px; font-weight: 900; font-size: 11px; }
-        
         .share-btn { background: #25D366; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; }
-        
         #status { text-align: center; padding: 60px; font-size: 20px; color: #666; font-weight: bold; }
     </style>
 </head>
@@ -44,18 +35,19 @@
 </div>
 
 <div class="container" id="feed">
-    <div id="status">טוען דיווחים מהשטח...</div>
+    <div id="status">טוען דיווחים...</div>
 </div>
 
 <script>
     let allNews = [];
-    
     const FEEDS = [
         { name: 'חמ"ל', type: 'news', url: 'https://www.hamal.co.il/rss' },
+        { name: 'Ynet', type: 'news', url: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
         { name: 'וואלה', type: 'news', url: 'https://rss.walla.co.il/feed/1' },
-        { name: 'מעריב', type: 'news', url: 'https://www.maariv.co.il/Rss/RssFeeds0.aspx' },
         { name: 'כלכליסט', type: 'money', url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml' },
+        { name: 'דה מרקר', type: 'money', url: 'https://www.themarker.com/srv/rss/all' },
         { name: 'ספורט 5', type: 'sport', url: 'https://www.sport5.co.il/RSSFeed.aspx' },
+        { name: 'ONE', type: 'sport', url: 'https://www.one.co.il/cat/rss/feed.aspx' },
         { name: 'מרכז הנדל"ן', type: 'nadlan', url: 'https://www.nadlan.org.il/feed/' }
     ];
 
@@ -63,10 +55,8 @@
         allNews = [];
         for (const f of FEEDS) {
             try {
-                const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&api_key=oyncy7v7z8x8u8u8u8u8u8u8u8u8u8u8u8u8u8u8&count=30&t=${Date.now()}`;
-                const res = await fetch(proxyUrl);
+                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&api_key=oyncy7v7z8x8u8u8u8u8u8u8u8u8u8u8u8u8u8u8&count=20&t=${Date.now()}`);
                 const data = await res.json();
-                
                 if (data.status === 'ok') {
                     data.items.forEach(i => {
                         let img = i.enclosure?.link || i.thumbnail || '';
@@ -74,23 +64,22 @@
                             const m = i.description.match(/src="([^"> ]+)"/);
                             if (m) img = m[1];
                         }
-                        const cleanTitle = i.title.replace(/<\/?[^>]+(>|$)/g, "");
-                        allNews.push({ ...i, title: cleanTitle, source: f.name, type: f.type, image: img });
+                        allNews.push({ ...i, title: i.title.replace(/<\/?[^>]+(>|$)/g, ""), source: f.name, type: f.type, image: img });
                     });
                 }
-            } catch (e) { console.log("Error:", f.name); }
+            } catch (e) {}
         }
         allNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
         
-        // מציג מיד את ה"חדשות" (הכפתור הפעיל)
-        const activeBtn = document.querySelector('.nav-btn.active');
-        filter('news', activeBtn);
+        // תיקון: מציג ישר את הקטגוריה הראשונה אחרי הטעינה
+        const activeType = document.querySelector('.nav-btn.active').getAttribute('onclick').match(/'([^']+)'/)[1];
+        render(allNews.filter(n => n.type === activeType));
     }
 
     function render(list) {
         const feed = document.getElementById('feed');
-        if (list.length === 0) {
-            feed.innerHTML = '<div id="status">אין דיווחים כרגע בקטגוריה זו.</div>';
+        if (!list.length) {
+            feed.innerHTML = '<div id="status">אין דיווחים כרגע. נסה לעבור קטגוריה.</div>';
             return;
         }
         feed.innerHTML = '';
@@ -102,29 +91,23 @@
                     <div class="card-content">
                         <div class="card-title" onclick="window.open('${item.link}', '_blank')">${item.title}</div>
                         <div class="meta">
-                            <div>
-                                <span class="source-tag">${item.source}</span>
-                                <span style="margin-right:8px">${time}</span>
-                            </div>
+                            <div><span class="source-tag">${item.source}</span><span style="margin-right:8px">${time}</span></div>
                             <button class="share-btn" onclick="window.open('https://wa.me/?text=${encodeURIComponent(item.title + ' ' + item.link)}')">שתף</button>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
     }
 
     function filter(type, btn) {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const filtered = allNews.filter(n => n.type === type);
-        render(filtered);
+        render(allNews.filter(n => n.type === type));
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     load();
     setInterval(load, 120000);
 </script>
-
 </body>
 </html>
