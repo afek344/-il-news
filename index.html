@@ -6,26 +6,164 @@
     <title>FlashIL | Pro</title>
     <style>
         :root { --red: #ed1c24; --bg: #121212; --card: #1e1e1e; --text: #ffffff; }
-        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); }
-        header { background: var(--red); padding: 15px; text-align: center; font-size: 24px; font-weight: 900; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 15px rgba(0,0,0,0.5); }
-        .nav { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #1a1a1a; position: sticky; top: 58px; z-index: 999; border-bottom: 1px solid #333; scrollbar-width: none; }
-        .nav-btn { border: none; padding: 8px 18px; border-radius: 20px; background: #333; color: white; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 14px; transition: 0.2s; }
-        .nav-btn.active { background: var(--red); box-shadow: 0 0 10px rgba(237, 28, 36, 0.5); }
-        .container { max-width: 600px; margin: auto; padding: 10px; min-height: 80vh; }
-        .card { background: var(--card); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border-right: 5px solid var(--red); box-shadow: 0 8px 16px rgba(0,0,0,0.3); animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .card-img { width: 100%; height: 210px; object-fit: cover; background: #222; display: block; }
-        .card-content { padding: 15px; }
-        .card-title { font-size: 18px; font-weight: bold; line-height: 1.4; margin-bottom: 10px; color: white; text-decoration: none; display: block; cursor: pointer; }
-        .meta { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; border-top: 1px solid #333; padding-top: 10px; align-items: center; }
-        .source-tag { background: #000; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
-        .share-btn { background: #25D366; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; }
-        #status { text-align: center; padding: 50px; color: #888; font-size: 16px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+
+        header {
+            background: var(--red);
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 900;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.5);
+            letter-spacing: -0.5px;
+        }
+
+        .nav {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 10px 12px;
+            background: #1a1a1a;
+            position: sticky;
+            top: 58px;
+            z-index: 999;
+            border-bottom: 1px solid #2a2a2a;
+            scrollbar-width: none;
+        }
+        .nav::-webkit-scrollbar { display: none; }
+
+        .nav-btn {
+            border: none;
+            padding: 8px 18px;
+            border-radius: 20px;
+            background: #2a2a2a;
+            color: #ccc;
+            cursor: pointer;
+            font-weight: 700;
+            white-space: nowrap;
+            font-size: 14px;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+        .nav-btn.active { background: var(--red); color: white; box-shadow: 0 0 12px rgba(237,28,36,0.4); }
+
+        .container { max-width: 620px; margin: auto; padding: 12px; }
+
+        .skeleton {
+            background: var(--card);
+            border-radius: 15px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            border-right: 5px solid #333;
+        }
+        .skel-img {
+            height: 180px;
+            background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+        }
+        .skel-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .skel-line {
+            height: 14px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+        }
+        .skel-line.short { width: 40%; height: 10px; }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 15px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            border-right: 5px solid var(--red);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            animation: fadeIn 0.35s ease-out both;
+        }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+        .card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            background: #2a2a2a;
+        }
+
+        .card-content { padding: 14px; }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: 700;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            color: white;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+        }
+        .card-title:hover { color: #ffaaaa; }
+
+        .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px solid #2a2a2a;
+            padding-top: 10px;
+            gap: 8px;
+        }
+
+        .meta-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+        .source-tag {
+            background: #111;
+            color: #fff;
+            padding: 3px 9px;
+            border-radius: 5px;
+            font-weight: 700;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .time-tag { color: #888; font-size: 12px; white-space: nowrap; }
+        .time-tag.fresh { color: #4caf50; font-weight: 600; }
+        .time-tag.recent { color: #ff9800; }
+
+        .share-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .no-items {
+            text-align: center;
+            padding: 60px 20px;
+            color: #555;
+            font-size: 15px;
+        }
     </style>
 </head>
 <body>
 
-<header>FlashIL | מרכז העדכונים</header>
+<header>⚡ FlashIL | מרכז העדכונים</header>
 
 <div class="nav">
     <button class="nav-btn active" onclick="changeCategory('news', this)">חדשות 🔥</button>
@@ -34,116 +172,135 @@
     <button class="nav-btn" onclick="changeCategory('nadlan', this)">נדל"ן 🏠</button>
 </div>
 
-<div class="container" id="feed">
-    <div id="status">טוען דיווחים אחרונים...</div>
-</div>
+<div class="container" id="feed"></div>
 
 <script>
-    let currentCategory = 'news';
+    const PROXY = 'https://api.allorigins.win/get?url=';
 
     const SOURCES = {
         news: [
-            { name: 'חמ"ל', url: 'https://www.hamal.co.il/rss' },
-            { name: 'Ynet', url: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
-            { name: 'וואלה', url: 'https://rss.walla.co.il/feed/1' }
+            { name: 'Ynet',       url: 'https://www.ynet.co.il/Integration/StoryRss2.xml' },
+            { name: 'וואלה',      url: 'https://rss.walla.co.il/feed/1' },
+            { name: 'N12',        url: 'https://www.mako.co.il/feeds/12news.xml' },
+            { name: 'ישראל היום', url: 'https://www.israelhayom.co.il/rss.xml' }
         ],
         money: [
-            { name: 'כלכליסט', url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml' },
-            { name: 'Bizportal', url: 'https://www.bizportal.co.il/rss/bizportalnews' }
+            { name: 'כלכליסט',   url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-8,00.xml' },
+            { name: 'TheMarker',  url: 'https://www.themarker.com/srv/rss/rss.xml' },
+            { name: 'Bizportal',  url: 'https://www.bizportal.co.il/rss/bizportalnews' }
         ],
         sport: [
-            { name: 'ספורט 5', url: 'https://www.sport5.co.il/RSSFeed.aspx' },
-            { name: 'ONE', url: 'https://www.one.co.il/cat/rss/feed.aspx' }
+            { name: 'ספורט 5',    url: 'https://www.sport5.co.il/RSSFeed.aspx' },
+            { name: 'Ynet ספורט', url: 'https://www.ynet.co.il/Integration/StoryRss2.xml?catid=16' },
+            { name: 'ONE',        url: 'https://www.one.co.il/cat/rss/feed.aspx' }
         ],
         nadlan: [
-            { name: 'מרכז הנדל"ן', url: 'https://www.nadlan.org.il/feed/' },
-            { name: 'נדל"ן Biz', url: 'https://www.bizportal.co.il/rss/realestat' }
+            { name: 'Bizportal נדל"ן', url: 'https://www.bizportal.co.il/rss/realestat' },
+            { name: 'כלכליסט נדל"ן',  url: 'https://www.calcalist.co.il/GeneralRSS/0,16335,L-5078,00.xml' }
         ]
     };
 
-    async function fetchNews() {
-        const feedContainer = document.getElementById('feed');
-        const activeSources = SOURCES[currentCategory];
-        let allItems = [];
+    let currentCategory = 'news';
 
-        for (const s of activeSources) {
-            try {
-                // שימוש במתווך לעקיפת חסימות ורענון נתונים (cache busting)
-                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(s.url)}&_=${Date.now()}`);
-                const data = await res.json();
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(data.contents, "text/xml");
-                
-                // תמיכה בפורמטים שונים (item ו-entry)
-                const items = xml.querySelectorAll("item, entry");
-
-                items.forEach(el => {
-                    const title = el.querySelector("title")?.textContent || "";
-                    const link = el.querySelector("link")?.textContent || el.querySelector("link")?.getAttribute("href") || "";
-                    let pubDateText = el.querySelector("pubDate")?.textContent || el.querySelector("published")?.textContent || el.querySelector("lastBuildDate")?.textContent || "";
-                    const description = el.querySelector("description")?.textContent || "";
-                    
-                    let img = "";
-                    // חיפוש תמונה בדרכים שונות
-                    const media = el.getElementsByTagName("media:content")[0] || el.querySelector("enclosure") || el.getElementsByTagName("media:thumbnail")[0];
-                    if (media) img = media.getAttribute("url");
-                    
-                    if (!img) {
-                        const imgMatch = description.match(/src="([^"> ]+)"/);
-                        if (imgMatch) img = imgMatch[1];
-                    }
-
-                    if (title && link) {
-                        allItems.push({ 
-                            title, 
-                            link, 
-                            pubDate: new Date(pubDateText), 
-                            img, 
-                            source: s.name 
-                        });
-                    }
-                });
-            } catch (e) { console.error(s.name + " failed"); }
-        }
-
-        // מיון מהחדש לישן
-        allItems.sort((a, b) => (b.pubDate || 0) - (a.pubDate || 0));
-
-        if (allItems.length > 0) {
-            feedContainer.innerHTML = allItems.slice(0, 40).map(item => `
-                <div class="card">
-                    ${item.img ? `<img src="${item.img}" class="card-img" onerror="this.style.display='none'">` : ''}
-                    <div class="card-content">
-                        <div class="card-title" onclick="window.open('${item.link}', '_blank')">${item.title}</div>
-                        <div class="meta">
-                            <div><span class="source-tag">${item.source}</span><span style="margin-right:8px">${isValidDate(item.pubDate) ? item.pubDate.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) : ''}</span></div>
-                            <button class="share-btn" onclick="window.open('https://wa.me/?text=${encodeURIComponent(item.title + ' ' + item.link)}')">שתף</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            feedContainer.innerHTML = '<div id="status">לא נמצאו עדכונים בקטגוריה זו כרגע.</div>';
-        }
+    function timeAgo(date) {
+        if (!date || isNaN(date)) return null;
+        const diff = Math.floor((Date.now() - date) / 1000);
+        if (diff < 60)    return { text: 'עכשיו', cls: 'fresh' };
+        if (diff < 3600)  return { text: `לפני ${Math.floor(diff/60)} דקות`, cls: diff < 1800 ? 'fresh' : 'recent' };
+        if (diff < 86400) return { text: `לפני ${Math.floor(diff/3600)} שעות`, cls: Math.floor(diff/3600) < 3 ? 'recent' : '' };
+        return { text: `לפני ${Math.floor(diff/86400)} ימים`, cls: '' };
     }
 
-    function isValidDate(d) {
-        return d instanceof Date && !isNaN(d);
+    function extractImage(item) {
+        const tags = ['media:content','media:thumbnail','enclosure'];
+        for (const tag of tags) {
+            const el = item.getElementsByTagName(tag)[0];
+            if (el) {
+                const url = el.getAttribute('url') || el.getAttribute('src');
+                if (url && url.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)/i)) return url;
+            }
+        }
+        const desc = item.querySelector('description')?.textContent || '';
+        const m = desc.match(/src=["']?(https?:\/\/[^"' >]+\.(?:jpg|jpeg|png|webp))/i);
+        return m ? m[1] : null;
+    }
+
+    function showSkeletons() {
+        document.getElementById('feed').innerHTML = Array(4).fill(`
+            <div class="skeleton">
+                <div class="skel-img"></div>
+                <div class="skel-body">
+                    <div class="skel-line"></div>
+                    <div class="skel-line"></div>
+                    <div class="skel-line short"></div>
+                </div>
+            </div>`).join('');
+    }
+
+    async function fetchOne(source) {
+        const url = PROXY + encodeURIComponent(source.url) + '&t=' + Date.now();
+        const res = await fetch(url, { signal: AbortSignal.timeout(9000) });
+        const data = await res.json();
+        if (!data.contents) return [];
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(data.contents, 'text/xml');
+        return [...xml.querySelectorAll('item, entry')].map(el => {
+            const title   = el.querySelector('title')?.textContent?.trim() || '';
+            const link    = el.querySelector('link')?.textContent?.trim() || el.querySelector('link')?.getAttribute('href') || '';
+            const pubRaw  = el.querySelector('pubDate')?.textContent || el.querySelector('published')?.textContent || '';
+            const pubDate = new Date(pubRaw);
+            const img     = extractImage(el);
+            return title && link ? { title, link, pubDate, img, source: source.name } : null;
+        }).filter(Boolean);
+    }
+
+    async function fetchNews() {
+        const results = await Promise.allSettled(SOURCES[currentCategory].map(fetchOne));
+        const items = results.filter(r => r.status === 'fulfilled').flatMap(r => r.value);
+        items.sort((a, b) => b.pubDate - a.pubDate);
+        return items.slice(0, 40);
+    }
+
+    function renderItems(items) {
+        const feed = document.getElementById('feed');
+        if (!items.length) {
+            feed.innerHTML = '<div class="no-items">😕 לא נמצאו עדכונים כרגע<br><small>נסה שוב עוד כמה שניות</small></div>';
+            return;
+        }
+        feed.innerHTML = items.map((item, i) => {
+            const ago = timeAgo(item.pubDate);
+            const timeHTML = ago ? `<span class="time-tag ${ago.cls}">${ago.text}</span>` : '';
+            const imgHTML  = item.img ? `<img class="card-img" src="${item.img}" loading="lazy" onerror="this.remove()">` : '';
+            const safeTitle = item.title.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const waText    = encodeURIComponent(item.title + '\n' + item.link);
+            return `<div class="card" style="animation-delay:${i*30}ms">
+                ${imgHTML}
+                <div class="card-content">
+                    <a class="card-title" href="${encodeURI(item.link)}" target="_blank" rel="noopener">${safeTitle}</a>
+                    <div class="meta">
+                        <div class="meta-right">
+                            <span class="source-tag">${item.source}</span>
+                            ${timeHTML}
+                        </div>
+                        <button class="share-btn" onclick="window.open('https://wa.me/?text=${waText}','_blank')">שתף 📤</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     function changeCategory(type, btn) {
         currentCategory = type;
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('feed').innerHTML = '<div id="status">טוען ' + btn.innerText + '...</div>';
-        fetchNews();
-        window.scrollTo({top: 0, behavior: 'smooth'});
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showSkeletons();
+        fetchNews().then(renderItems);
     }
 
-    // הפעלה ראשונית
-    fetchNews();
-    // רענון כל 2 דקות
-    setInterval(fetchNews, 120000);
+    showSkeletons();
+    fetchNews().then(renderItems);
+    setInterval(() => fetchNews().then(renderItems), 120000);
 </script>
 </body>
 </html>
