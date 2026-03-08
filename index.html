@@ -1,9 +1,8 @@
-<script>
-    async function fetchNews() {
+async function fetchNews() {
         const feed = document.getElementById('feed');
         
         try {
-            // אנחנו משתמשים בשירות שמביא כותרות מ-RSS של אתר חדשות (למשל מעריב או וואלה)
+            // כאן אנחנו פונים למקור ששואב חדשות אמיתיות מאתר מעריב
             const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.maariv.co.il%2FRss%2FRssFeeds0.aspx');
             const data = await response.json();
             
@@ -11,16 +10,16 @@
 
             data.items.forEach(item => {
                 feed.innerHTML += `
-                    <div class="card" onclick="window.open('${item.link}', '_blank')">
+                    <div class="card" onclick="window.open('${item.link}', '_blank')" style="cursor:pointer;">
                         <div class="title">${item.title}</div>
-                        <div class="time">${new Date(item.pubDate).toLocaleTimeString('he-IL')} • חדשות בזמן אמת</div>
+                        <div class="time">${new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})} • חדשות חמות</div>
                     </div>
                 `;
             });
         } catch (error) {
-            feed.innerHTML = '<div class="card">שגיאה בטעינת החדשות. נסה שוב מאוחר יותר.</div>';
+            feed.innerHTML = '<div class="card"><div class="title">אופס! שגיאה בטעינה. נסה לרענן.</div></div>';
         }
     }
 
+    // מפעיל את השאיבה ברגע שהדף עולה
     fetchNews();
-</script>
