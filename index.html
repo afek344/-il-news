@@ -20,36 +20,40 @@
 <header>IL-NEWS | חדשות בזמן אמת</header>
 
 <div class="container" id="feed">
-    <div id="status">טוען חדשות אחרונות מהשטח...</div>
+    <div id="status">מחפש דיווחים אחרונים...</div>
 </div>
 
 <script>
     async function fetchNews() {
-        const feed = document.getElementById('feed');
+        const feedElement = document.getElementById('feed');
         try {
-            // שואב חדשות מאתר מעריב
-            const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.maariv.co.il%2FRss%2FRssFeeds0.aspx');
+            // שימוש במקור חדשות של וואלה דרך מתווך
+            const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Frss.walla.co.il%2Ffeed%2F1');
             const data = await response.json();
             
             if (data.items && data.items.length > 0) {
-                feed.innerHTML = ''; // מנקה את הודעת הטעינה
+                feedElement.innerHTML = ''; // מנקה את הודעת הטעינה
                 data.items.forEach(item => {
-                    feed.innerHTML += `
-                        <div class="card" onclick="window.open('${item.link}', '_blank')">
-                            <div class="title">${item.title}</div>
-                            <div class="time">${new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})} • חדשות חמות</div>
-                        </div>
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.onclick = () => window.open(item.link, '_blank');
+                    card.innerHTML = `
+                        <div class="title">${item.title}</div>
+                        <div class="time">${new Date(item.pubDate).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})} • חדשות חמות</div>
                     `;
+                    feedElement.appendChild(card);
                 });
             } else {
-                document.getElementById('status').innerText = "לא נמצאו כתבות חדשות כרגע.";
+                document.getElementById('status').innerText = "לא נמצאו מבזקים כרגע. נסה שוב בעוד דקה.";
             }
         } catch (error) {
-            document.getElementById('status').innerText = "שגיאה בחיבור. וודא שיש לך אינטרנט ורענן את הדף.";
+            document.getElementById('status').innerText = "שגיאה בחיבור לחדשות. וודא שהאינטרנט תקין.";
         }
     }
 
     fetchNews();
+    // רענון אוטומטי כל 5 דקות
+    setInterval(fetchNews, 300000);
 </script>
 
 </body>
